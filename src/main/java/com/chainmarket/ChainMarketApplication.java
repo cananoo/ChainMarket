@@ -1,4 +1,4 @@
-package cuit.chainmarket;
+package com.chainmarket;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

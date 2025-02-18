@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>用户注册 - ChainMarket</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <style>
+        .ui.selection.dropdown {
+            width: 100%;
+            height: 38px;
+            padding: 0.5em 1em;
+        }
+        .ui.selection.dropdown > .dropdown.icon {
+            padding: 0.5em;
+        }
+    </style>
+</head>
+<body>
+    <div class="ui container" style="padding-top: 100px;">
+        <div class="ui centered grid">
+            <div class="six wide column">
+                <h2 class="ui teal image header">
+                    <div class="content">ChainMarket用户注册</div>
+                </h2>
+                <form class="ui large form">
+                    <div class="ui stacked segment">
+                        <div class="field">
+                            <div class="ui left icon input">
+                                <i class="user icon"></i>
+                                <input type="text" id="userName" placeholder="用户名(6-20位)">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui left icon input">
+                                <i class="lock icon"></i>
+                                <input type="password" id="password" placeholder="密码(8-20位)">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui left icon input">
+                                <i class="mobile icon"></i>
+                                <input type="text" id="phone" placeholder="手机号">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui selection dropdown">
+                                <input type="hidden" id="roleType">
+                                <i class="dropdown icon"></i>
+                                <div class="default text">请选择角色</div>
+                                <div class="menu">
+                                    <div class="item" data-value="1">买家</div>
+                                    <div class="item" data-value="2">卖家</div>
+                                    <div class="item" data-value="3">仲裁者</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="field">
+                            <div class="ui action input">
+                                <input type="text" id="verifyCode" placeholder="验证码">
+                                <button class="ui teal button" type="button" onclick="getVerifyCode()">获取验证码</button>
+                            </div>
+                        </div>
+                        <div class="ui fluid large teal submit button" onclick="register()">注册</div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.ui.dropdown').dropdown();
+        });
+
+        function getVerifyCode() {
+            const phone = $('#phone').val();
+            if(!phone || !/^1\d{10}$/.test(phone)) {
+                alert('请输入正确的手机号');
+                return;
+            }
+            
+            $.post('/user/verifyCode', {phone: phone})
+                .done(function(res) {
+                    if(res.code === 200) {
+                        alert('验证码已发送');
+                    } else {
+                        alert(res.message);
+                    }
+                });
+        }
+
+        function register() {
+            const data = {
+                username: $('#userName').val(),
+                password: $('#password').val(),
+                phone: $('#phone').val(),
+                roleType: parseInt($('#roleType').val())
+            };
+            const verifyCode = $('#verifyCode').val();
+            
+            if(!validateForm(data)) {
+                return;
+            }
+            
+            if(!verifyCode) {
+                alert('请输入验证码');
+                return;
+            }
+            
+            if(!data.roleType) {
+                alert('请选择角色');
+                return;
+            }
+            
+            $.ajax({
+                url: '/user/register?verifyCode=' + verifyCode,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if(res.code === 200) {
+                        alert('注册成功');
+                        window.location.href = '/user/login';
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+
+        function validateForm(data) {
+            if(!data.username || data.username.length < 6 || data.username.length > 20) {
+                alert('用户名长度必须在6-20位之间');
+                return false;
+            }
+            if(!data.password || data.password.length < 8 || data.password.length > 20) {
+                alert('密码长度必须在8-20位之间');
+                return false;
+            }
+            if(!data.phone || !/^1\d{10}$/.test(data.phone)) {
+                alert('请输入正确的手机号');
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html> 
