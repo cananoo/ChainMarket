@@ -1,6 +1,7 @@
 package com.chainmarket.service;
 
 import com.chainmarket.entity.User;
+import com.chainmarket.dto.LoginDTO;
 
 /**
  * 用户服务接口
@@ -20,4 +21,11 @@ public interface IUserService {
      * @param verifyCode 验证码
      */
     void register(User user, String verifyCode);
+    
+    /**
+     * 用户登录
+     * @param loginDTO 登录信息
+     * @return 用户信息
+     */
+    User login(LoginDTO loginDTO);
 } 

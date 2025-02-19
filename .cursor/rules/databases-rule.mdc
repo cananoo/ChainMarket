@@ -90,6 +90,7 @@ CREATE TABLE goods_info (
     goodsId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '商品ID',
     categoryId BIGINT NOT NULL COMMENT '分类ID',
     sellerId BIGINT NOT NULL COMMENT '卖家ID',
+    owner_history TEXT COMMENT '历史拥有者ID列表(逗号分隔)',
     goodsName VARCHAR(50) NOT NULL COMMENT '商品名称',
     goodsDesc TEXT NOT NULL COMMENT '商品描述',
     price DECIMAL(10,2) NOT NULL COMMENT '商品价格',

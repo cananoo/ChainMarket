@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.chainmarket.entity.User;
 import org.apache.ibatis.annotations.Mapper;
+import java.util.List;
 
 /**
  * 用户数据访问层
@@ -37,5 +38,14 @@ public interface UserDao extends BaseMapper<User> {
      */
     default boolean checkPhoneExists(String phone) {
         return exists(new QueryWrapper<User>().eq("phone", phone));
+    }
+    
+    /**
+     * 查询待审核用户列表
+     */
+    default List<User> selectPendingUsers() {
+        return selectList(new QueryWrapper<User>()
+                .eq("status", 0)
+                .orderByDesc("createTime"));
     }
 } 

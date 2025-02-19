@@ -10,6 +10,9 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.concurrent.TimeUnit;
+import com.chainmarket.dto.LoginDTO;
+import com.chainmarket.dao.AuditInfoDao;
+import com.chainmarket.entity.AuditInfo;
 
 /**
  * 用户服务实现类
@@ -22,6 +25,9 @@ public class UserServiceImpl implements IUserService {
     
     @Autowired
     private StringRedisTemplate redisTemplate;
+    
+    @Autowired
+    private AuditInfoDao auditInfoDao;
     
     private static final String VERIFY_CODE_PREFIX = "verify_code:";
     private static final long VERIFY_CODE_EXPIRE = 5; // 验证码5分钟有效期
@@ -77,5 +83,32 @@ public class UserServiceImpl implements IUserService {
         
         // 删除验证码
         redisTemplate.delete(key);
+    }
+
+    @Override
+    public User login(LoginDTO loginDTO) {
+        // 根据用户名查询用户
+        User user = userDao.selectByUsername(loginDTO.getUsername());
+        if (user == null) {
+            throw new BusinessException("用户名或密码错误");
+        }
+        
+        // 验证密码
+        if (!PasswordEncoder.matches(loginDTO.getPassword(), user.getPassword())) {
+            throw new BusinessException("用户名或密码错误");
+        }
+        
+        // 验证用户状态
+        if (user.getStatus() == 0) {
+            throw new BusinessException("账号待审核");
+        } else if (user.getStatus() == 2) {
+            // 查询最新的审核记录
+            AuditInfo auditInfo = auditInfoDao.selectLatestByObjectId(user.getUserId(), 1);
+            String reason = auditInfo != null && auditInfo.getAuditOpinion() != null ? 
+                    auditInfo.getAuditOpinion() : "未提供原因";
+            throw new BusinessException("账号已被禁用，原因：" + reason);
+        }
+        
+        return user;
     }
 } 

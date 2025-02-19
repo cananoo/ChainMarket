@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpSession;
+
 @Controller
 @RequestMapping("/user")
 public class UserController {
@@ -48,5 +50,23 @@ public class UserController {
         } catch (Exception e) {
             return Result.error("注册失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 退出登录
+     */
+    @GetMapping("/logout")
+    public String logout(HttpSession session) {
+        // 清除session中的用户信息
+        session.removeAttribute("user");
+        // 重定向到首页
+        return "redirect:/";
+    }
+
+    @GetMapping("/current")
+    @ResponseBody
+    public Result<User> getCurrentUser(HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        return Result.success(user);
     }
 } 

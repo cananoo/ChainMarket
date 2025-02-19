@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>ChainMarket - 区块链二手交易平台</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .masthead {
+            background: linear-gradient(135deg, #1a237e, #0d47a1);
+            padding: 8em 0 4em;
+            color: white;
+            margin-bottom: 2em;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .masthead h1 {
+            font-size: 4em;
+            margin-bottom: 0.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .masthead p {
+            font-size: 2em;
+            margin-bottom: 1em;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            font-weight: bold;
+            color: #c1eea9;
+        }
+        .masthead .sub-title {
+            font-size: 1.2em;
+            margin-top: 1em;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        .feature-section {
+            padding: 3em 0;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .ui.vertical.segment {
+            background: white;
+            margin: 2em 0;
+            padding: 3em 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .ui.inverted.vertical.footer.segment {
+            background: #1b1c1d;
+            padding: 4em 0;
+            margin-top: 3em;
+            box-shadow: none;
+        }
+        .ui.statistics {
+            margin-top: 2em;
+        }
+        .ui.cards {
+            margin-top: 2em;
+        }
+        .ui.huge.primary.button {
+            margin-top: 1em;
+            background-color: #2185d0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+        .ui.huge.primary.button:hover {
+            background-color: #1678c2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="ui fixed inverted menu">
+        <div class="ui container">
+            <a href="/" class="header item">
+                <i class="chain icon"></i>
+                ChainMarket
+            </a>
+            <a href="/market" class="item">商品市场</a>
+            <a href="/about" class="item">关于我们</a>
+            <div class="right menu">
+                <th:block th:if="${session.user != null}">
+                    <div class="item">
+                        <i class="user icon"></i>
+                        <span th:text="${session.user.username}">用户名</span>
+                        <span class="ui label" th:text="${
+                            session.user.roleType == 1 ? '买家' :
+                            session.user.roleType == 2 ? '卖家' :
+                            session.user.roleType == 3 ? '仲裁员' :
+                            session.user.roleType == 9 ? '管理员' : '未知'
+                        }">角色</span>
+                    </div>
+                    <a href="/user/center" class="item">个人中心</a>
+                    <a href="/user/logout" class="item">退出</a>
+                </th:block>
+                <th:block th:if="${session.user == null}">
+                    <a href="/user/register" class="item">注册</a>
+                    <a href="/user/login" class="item">登录</a>
+                </th:block>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主页头部 -->
+    <div class="ui vertical masthead center aligned segment">
+        <div class="ui container">
+            <h1 class="ui header">
+                ChainMarket 链上跳蚤市场
+            </h1>
+            <p>基于区块链技术的</p>
+            <p style="font-size: 2.5em; margin: 0.3em 0;">安全可信二手交易平台</p>
+            <div class="sub-title">
+                <i class="shield alternate icon"></i> 区块链保证 &nbsp;&nbsp;
+                <i class="handshake icon"></i> 智能合约 &nbsp;&nbsp;
+                <i class="lock icon"></i> 安全交易
+            </div>
+            <a href="/market" class="ui huge primary button">
+                开始探索 <i class="right arrow icon"></i>
+            </a>
+        </div>
+    </div>
+
+    <!-- 特色功能区 -->
+    <div class="ui vertical feature-section segment">
+        <div class="ui container">
+            <div class="ui three column stackable grid">
+                <div class="column">
+                    <div class="ui icon header">
+                        <i class="shield alternate icon"></i>
+                        安全可信
+                    </div>
+                    <p>区块链技术保证交易数据不可篡改，智能合约确保交易安全</p>
+                </div>
+                <div class="column">
+                    <div class="ui icon header">
+                        <i class="handshake icon"></i>
+                        公平交易
+                    </div>
+                    <p>独特的仲裁机制，保护买卖双方权益，解决交易纠纷</p>
+                </div>
+                <div class="column">
+                    <div class="ui icon header">
+                        <i class="users icon"></i>
+                        多重角色
+                    </div>
+                    <p>支持买家、卖家、仲裁员多种角色，满足不同用户需求</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 最新商品展示 -->
+    <div class="ui vertical segment">
+        <div class="ui container">
+            <h2 class="ui header">
+                <i class="gift icon"></i>
+                <div class="content">
+                    最新上架
+                    <div class="sub header">精选优质二手商品</div>
+                </div>
+            </h2>
+            <div class="ui four cards">
+                <div class="card">
+                    <div class="image">
+                        <img src="https://ts1.cn.mm.bing.net/th/id/R-C.297edc4660eb0c52d8d95b45d943f525?rik=XTgTmLoU3ih%2bRg&riu=http%3a%2f%2fwww.dians.net%2fupload%2fdefault%2f20240409%2f569342657fd49c3006be46cbaaf7bd3d.jpg&ehk=njdeypD1XeA71smjzhxhlEDeeD5SP3tB4hBJHv2nsOw%3d&risl=&pid=ImgRaw&r=0/300x200">
+                    </div>
+                    <div class="content">
+                        <div class="header">商品名称</div>
+                        <div class="meta">
+                            <span class="price">¥ 299</span>
+                        </div>
+                        <div class="description">商品描述...</div>
+                    </div>
+                </div>
+                <!-- 更多商品卡片 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 平台优势 -->
+    <div class="ui vertical segment">
+        <div class="ui container">
+            <div class="ui two column stackable grid">
+                <div class="column">
+                    <h3 class="ui header">为什么选择 ChainMarket?</h3>
+                    <div class="ui bulleted list">
+                        <div class="item">区块链技术保证交易安全</div>
+                        <div class="item">智能合约自动执行，无需担心违约</div>
+                        <div class="item">专业仲裁团队，解决交易纠纷</div>
+                        <div class="item">完整的商品溯源，确保商品真实性</div>
+                    </div>
+                </div>
+                <div class="column center aligned">
+                    <img src="https://thumbs.dreamstime.com/b/blockchain-vector-icon-blockchain-vector-icon-design-element-outline-style-113560481.jpg" alt="区块链" style="max-width: 25%; margin-top: 0em;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <div class="ui inverted vertical footer segment">
+        <div class="ui container">
+            <div class="ui stackable inverted divided grid">
+                <div class="four wide column">
+                    <h4 class="ui inverted header">关于我们</h4>
+                    <div class="ui inverted link list">
+                        <a class="item">联系我们</a>
+                        <a class="item">加入我们</a>
+                        <a class="item">隐私政策</a>
+                    </div>
+                </div>
+                <div class="four wide column">
+                    <h4 class="ui inverted header">服务</h4>
+                    <div class="ui inverted link list">
+                        <a class="item">买家指南</a>
+                        <a class="item">卖家指南</a>
+                        <a class="item">仲裁规则</a>
+                    </div>
+                </div>
+                <div class="eight wide column">
+                    <h4 class="ui inverted header">ChainMarket</h4>
+                    <p>基于区块链技术的二手交易平台，让二手交易更加安全、透明、可信</p>
+                </div>
+            </div>
+            <div class="ui inverted section divider"></div>
+            <div class="ui horizontal inverted small divided link list">
+                <a class="item">© 2025 ChainMarket</a>
+                <a class="item">使用条款</a>
+                <a class="item">隐私政策</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+</body>
+</html> 
