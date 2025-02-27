@@ -5,6 +5,7 @@ import com.chainmarket.common.Result;
 import com.chainmarket.service.impl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
@@ -68,5 +69,15 @@ public class UserController {
     public Result<User> getCurrentUser(HttpSession session) {
         User user = (User) session.getAttribute("user");
         return Result.success(user);
+    }
+
+    @GetMapping("/center")
+    public String center(Model model, HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/user/login";
+        }
+        model.addAttribute("user", user);
+        return "user/center";
     }
 } 

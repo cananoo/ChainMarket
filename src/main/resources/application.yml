@@ -9,16 +9,15 @@ spring:
     password: root
     
   redis:
-    host: 192.168.95.140
+    host: 192.168.95.142
     port: 6379
-    password: html
     database: 0
     
   rabbitmq:
-    host: localhost
+    host: 192.168.95.142
     port: 5672
-    username: guest
-    password: guest
+    username: admin
+    password: 123456
     
   thymeleaf:
     cache: false

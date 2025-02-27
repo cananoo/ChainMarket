@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>个人中心 - ChainMarket</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <style>
+        .main.container {
+            margin-top: 7em;
+            margin-bottom: 3em;
+        }
+        .user-info {
+            padding: 2em;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="ui fixed inverted menu">
+        <div class="ui container">
+            <a href="/" class="header item">
+                <i class="chain icon"></i>
+                ChainMarket
+            </a>
+            <a href="/market" class="item">商品市场</a>
+            <div class="right menu">
+                <div class="item">
+                    <i class="user icon"></i>
+                    <span th:text="${user.username}">用户名</span>
+                </div>
+                <a href="/user/logout" class="item">退出</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui main container">
+        <div class="ui grid">
+            <!-- 左侧菜单 -->
+            <div class="four wide column">
+                <div class="ui vertical fluid tabular menu">
+                    <a class="active item" data-tab="basic">
+                        <i class="user icon"></i>
+                        基本信息
+                    </a>
+                    <a class="item" data-tab="wallet">
+                        <i class="wallet icon"></i>
+                        钱包信息
+                    </a>
+                    <th:block th:if="${user.roleType == 2}">
+                        <a class="item" data-tab="goods">
+                            <i class="shopping bag icon"></i>
+                            我的商品
+                        </a>
+                    </th:block>
+                    <a class="item" data-tab="orders">
+                        <i class="list icon"></i>
+                        我的订单
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 右侧内容区 -->
+            <div class="twelve wide stretched column">
+                <!-- 基本信息 -->
+                <div class="ui active tab segment" data-tab="basic">
+                    <div class="user-info">
+                        <h3 class="ui dividing header">基本信息</h3>
+                        <div class="ui list">
+                            <div class="item">
+                                <i class="user icon"></i>
+                                <div class="content">
+                                    <div class="header">用户名</div>
+                                    <div class="description" th:text="${user.username}">用户名</div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <i class="phone icon"></i>
+                                <div class="content">
+                                    <div class="header">手机号</div>
+                                    <div class="description" th:text="${user.phone}">手机号</div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <i class="id badge icon"></i>
+                                <div class="content">
+                                    <div class="header">角色类型</div>
+                                    <div class="description">
+                                        <div class="ui label" th:text="${
+                                            user.roleType == 1 ? '买家' :
+                                            user.roleType == 2 ? '卖家' :
+                                            user.roleType == 3 ? '仲裁员' :
+                                            user.roleType == 9 ? '管理员' : '未知'
+                                        }">角色</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <i class="calendar icon"></i>
+                                <div class="content">
+                                    <div class="header">注册时间</div>
+                                    <div class="description" th:text="${#temporals.format(user.createTime, 'yyyy-MM-dd HH:mm:ss')}">注册时间</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 钱包信息 -->
+                <div class="ui tab segment" data-tab="wallet">
+                    <div class="user-info">
+                        <h3 class="ui dividing header">钱包信息</h3>
+                        <div class="ui list">
+                            <div class="item">
+                                <i class="address card icon"></i>
+                                <div class="content">
+                                    <div class="header">钱包地址</div>
+                                    <div class="description">
+                                        <code th:text="${user.walletAddress ?: '暂未生成钱包'}">钱包地址</code>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 其他标签页可以根据需要添加 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <script>
+        $('.menu .item').tab();
+    </script>
+</body>
+</html> 

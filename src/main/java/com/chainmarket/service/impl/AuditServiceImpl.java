@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpSession;
 import java.util.List;
+import com.chainmarket.service.IWalletService;
 
 @Service
 public class AuditServiceImpl implements IAuditService {
@@ -29,6 +30,9 @@ public class AuditServiceImpl implements IAuditService {
     
     @Autowired
     private HttpSession session;
+    
+    @Autowired
+    private IWalletService walletService;
     
     @Override
     public List<User> getPendingUsers() {
@@ -53,6 +57,11 @@ public class AuditServiceImpl implements IAuditService {
         }
         
         user.setStatus(auditDTO.getStatus());
+        // 如果审核通过，生成钱包地址
+        if (auditDTO.getStatus() == 1) {
+            String walletAddress = walletService.generateWalletAddress();
+            user.setWalletAddress(walletAddress);
+        }
         userDao.updateById(user);
         
         // 记录审核信息

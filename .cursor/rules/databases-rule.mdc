@@ -2,10 +2,8 @@
 description: 标明此项目所采用的数据库数据及表结构
 globs: *.*
 ---
-
+---
 项目数据库结构如下:
-
-
 -- 创建数据库
 CREATE DATABASE chain_market CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 

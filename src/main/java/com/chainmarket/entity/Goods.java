@@ -14,24 +14,26 @@ import java.util.stream.Collectors;
 public class Goods {
     
     @TableId(type = IdType.AUTO)
-    private Long id;
+    private Long goodsId;
     
-    private String name;
-    
-    private String description;
-    
-    private BigDecimal price;
+    @TableField("categoryId")
+    private Long categoryId;
     
     @TableField("sellerId")
     private Long sellerId;
     
-    @TableField("sellerName")
-    private String sellerName;
-    
-    private Integer status;    // 0-待审核 1-正常 2-已下架
-    
     @TableField("owner_history")
-    private String ownerHistory;  // 历史拥有者ID列表(逗号分隔)
+    private String ownerHistory;
+    
+    @TableField("goodsName")
+    private String goodsName;
+    
+    @TableField("goodsDesc")
+    private String goodsDesc;
+    
+    private BigDecimal price;
+    
+    private Integer status;    // 0-待审核 1-已上架 2-已下架 3-已售出
     
     @TableField(value = "createTime", fill = FieldFill.INSERT)
     private LocalDateTime createTime;

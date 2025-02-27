@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>系统管理 - ChainMarket</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <style>
+        .main.container {
+            margin-top: 7em;
+            margin-bottom: 3em;
+        }
+        .ui.menu .item img.logo {
+            margin-right: 1.5em;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="ui fixed inverted menu">
+        <div class="ui container">
+            <a href="/" class="header item">
+                <i class="chain icon"></i>
+                ChainMarket
+            </a>
+            <a href="/admin" class="active item">系统管理</a>
+            <div class="right menu">
+                <div class="item">
+                    <i class="user icon"></i>
+                    <span th:text="${session.user.username}">管理员</span>
+                </div>
+                <a href="/user/logout" class="item">退出</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui main container">
+        <div class="ui grid">
+            <!-- 左侧菜单 -->
+            <div class="four wide column">
+                <div class="ui vertical fluid tabular menu">
+                    <a class="active item" data-tab="audit">
+                        <i class="check circle icon"></i>
+                        审核管理
+                    </a>
+                    <a class="item" data-tab="users">
+                        <i class="users icon"></i>
+                        用户管理
+                    </a>
+                    <a class="item" data-tab="params">
+                        <i class="settings icon"></i>
+                        系统参数
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 右侧内容区 -->
+            <div class="twelve wide stretched column">
+                <!-- 审核管理 -->
+                <div class="ui active tab segment" data-tab="audit">
+                    <div class="ui top attached tabular menu">
+                        <a class="active item" data-tab="audit/users">用户审核</a>
+                        <a class="item" data-tab="audit/goods">商品审核</a>
+                    </div>
+                    
+                    <!-- 用户审核子标签 -->
+                    <div class="ui bottom attached active tab segment" data-tab="audit/users">
+                        <table class="ui celled table">
+                            <thead>
+                                <tr>
+                                    <th>用户名</th>
+                                    <th>手机号</th>
+                                    <th>角色类型</th>
+                                    <th>注册时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="userAuditList"></tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- 商品审核子标签 -->
+                    <div class="ui bottom attached tab segment" data-tab="audit/goods">
+                        <table class="ui celled table">
+                            <thead>
+                                <tr>
+                                    <th>商品名称</th>
+                                    <th>卖家ID</th>
+                                    <th>价格</th>
+                                    <th>发布时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="goodsAuditList"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- 用户管理 -->
+                <div class="ui tab segment" data-tab="users">
+                    <div class="ui form">
+                        <div class="fields">
+                            <div class="field">
+                                <input type="text" id="searchUsername" placeholder="用户名">
+                            </div>
+                            <div class="field">
+                                <select class="ui dropdown" id="searchRole">
+                                    <option value="">所有角色</option>
+                                    <option value="1">买家</option>
+                                    <option value="2">卖家</option>
+                                    <option value="3">仲裁员</option>
+                                </select>
+                            </div>
+                            <div class="field">
+                                <button class="ui primary button" onclick="searchUsers()">搜索</button>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="ui celled table">
+                        <thead>
+                            <tr>
+                                <th>用户名</th>
+                                <th>手机号</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                                <th>注册时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userList"></tbody>
+                    </table>
+                </div>
+                
+                <!-- 系统参数 -->
+                <div class="ui tab segment" data-tab="params">
+                    <div class="ui form">
+                        <h4 class="ui dividing header">交易参数</h4>
+                        <div class="field">
+                            <label>支付超时时间（分钟）</label>
+                            <input type="number" id="payTimeout" min="1" max="1440">
+                        </div>
+                        <div class="field">
+                            <label>订单自动确认时间（天）</label>
+                            <input type="number" id="autoConfirmDays" min="1" max="15">
+                        </div>
+                        
+                        <h4 class="ui dividing header">仲裁参数</h4>
+                        <div class="field">
+                            <label>仲裁员最少人数</label>
+                            <input type="number" id="minArbitrators" min="3" max="11">
+                        </div>
+                        <div class="field">
+                            <label>仲裁投票时限（小时）</label>
+                            <input type="number" id="voteTimeout" min="1" max="72">
+                        </div>
+                        <div class="field">
+                            <label>仲裁奖励比例（%）</label>
+                            <input type="number" id="rewardRate" min="0" max="100">
+                        </div>
+                        
+                        <button class="ui primary button" onclick="saveParams()">保存设置</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <script>
+        $('.menu .item').tab();
+        $('.ui.dropdown').dropdown();
+        
+        // 加载待审核用户
+        function loadPendingUsers() {
+            $.get('/audit/users', function(res) {
+                if(res.code === 200) {
+                    const users = res.data;
+                    let html = '';
+                    users.forEach(user => {
+                        html += `
+                            <tr>
+                                <td>${user.username}</td>
+                                <td>${user.phone}</td>
+                                <td>${getRoleType(user.roleType)}</td>
+                                <td>${user.createTime}</td>
+                                <td>
+                                    <button class="ui tiny positive button" onclick="auditUser(${user.userId}, 1)">通过</button>
+                                    <button class="ui tiny negative button" onclick="auditUser(${user.userId}, 2)">拒绝</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    $('#userAuditList').html(html);
+                }
+            });
+        }
+        
+        // 加载待审核商品
+        function loadPendingGoods() {
+            $.get('/audit/goods', function(res) {
+                if(res.code === 200) {
+                    const goods = res.data;
+                    let html = '';
+                    goods.forEach(good => {
+                        html += `
+                            <tr>
+                                <td>${good.goodsName}</td>
+                                <td>${good.sellerId}</td>
+                                <td>${good.price}</td>
+                                <td>${good.createTime}</td>
+                                <td>
+                                    <button class="ui tiny positive button" onclick="auditGoods(${good.goodsId}, 1)">通过</button>
+                                    <button class="ui tiny negative button" onclick="auditGoods(${good.goodsId}, 2)">拒绝</button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                    $('#goodsAuditList').html(html);
+                }
+            });
+        }
+        
+        // 审核用户
+        function auditUser(userId, status) {
+            let comment = '';
+            if (status === 2) {
+                comment = prompt('请输入拒绝原因：');
+                if (comment === null) return;
+                if (comment.trim() === '') {
+                    alert('请输入拒绝原因');
+                    return;
+                }
+            }
+            
+            const data = {
+                id: userId,
+                type: 'user',
+                status: status,
+                comment: comment
+            };
+            
+            $.ajax({
+                url: '/audit/user',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if(res.code === 200) {
+                        alert('审核成功');
+                        loadPendingUsers();
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+        
+        // 审核商品
+        function auditGoods(goodsId, status) {
+            let comment = '';
+            if (status === 2) {
+                comment = prompt('请输入拒绝原因：');
+                if (comment === null) return;
+                if (comment.trim() === '') {
+                    alert('请输入拒绝原因');
+                    return;
+                }
+            }
+            
+            const data = {
+                id: goodsId,
+                type: 'goods',
+                status: status,
+                comment: comment
+            };
+            
+            $.ajax({
+                url: '/audit/goods',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if(res.code === 200) {
+                        alert('审核成功');
+                        loadPendingGoods();
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+        
+        // 获取角色类型显示文本
+        function getRoleType(type) {
+            switch(type) {
+                case 1: return '买家';
+                case 2: return '卖家';
+                case 3: return '仲裁员';
+                case 9: return '管理员';
+                default: return '未知';
+            }
+        }
+        
+        // 搜索用户
+        function searchUsers() {
+            const params = {
+                username: $('#searchUsername').val(),
+                roleType: $('#searchRole').val()
+            };
+            
+            $.get('/admin/users', params, function(res) {
+                if(res.code === 200) {
+                    renderUserList(res.data);
+                }
+            });
+        }
+        
+        // 加载系统参数
+        function loadParams() {
+            $.get('/admin/params', function(res) {
+                if(res.code === 200) {
+                    const params = res.data;
+                    $('#payTimeout').val(params.payTimeout);
+                    $('#autoConfirmDays').val(params.autoConfirmDays);
+                    $('#minArbitrators').val(params.minArbitrators);
+                    $('#voteTimeout').val(params.voteTimeout);
+                    $('#rewardRate').val(params.rewardRate);
+                }
+            });
+        }
+        
+        // 保存系统参数
+        function saveParams() {
+            const data = {
+                payTimeout: $('#payTimeout').val(),
+                autoConfirmDays: $('#autoConfirmDays').val(),
+                minArbitrators: $('#minArbitrators').val(),
+                voteTimeout: $('#voteTimeout').val(),
+                rewardRate: $('#rewardRate').val()
+            };
+            
+            $.ajax({
+                url: '/admin/params',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if(res.code === 200) {
+                        alert('保存成功');
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+        
+        // 初始化加载
+        loadPendingUsers();
+        loadPendingGoods();
+        loadParams();
+    </script>
+</body>
+</html> 

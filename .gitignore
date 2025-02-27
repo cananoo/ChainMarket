@@ -33,4 +33,4 @@ build/
 .vscode/
 
 ### Cursor ###
-.cursor/
+.cursor/rules/

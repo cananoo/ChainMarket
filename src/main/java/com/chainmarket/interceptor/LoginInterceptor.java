@@ -19,9 +19,9 @@ public class LoginInterceptor implements HandlerInterceptor {
             return false;
         }
         
-        // 如果是审核相关的请求，检查用户是否为管理员
+        // 如果是管理相关的请求，检查用户是否为管理员
         String requestURI = request.getRequestURI();
-        if (requestURI.startsWith("/audit")) {
+        if (requestURI.startsWith("/admin") || requestURI.startsWith("/audit")) {
             if (user.getRoleType() != 9) { // roleType=9为管理员
                 response.sendError(403, "无权限执行此操作");
                 return false;
