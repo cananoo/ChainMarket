@@ -77,6 +77,17 @@
                 ChainMarket
             </a>
             <a href="/market" class="item">商品市场</a>
+            <!-- 管理员特殊入口 -->
+            <th:block th:if="${session.user != null && session.user.roleType == 9}">
+                <a href="/admin" class="item">
+                    <i class="cogs icon"></i>
+                    系统管理
+                </a>
+                <a href="http://192.168.95.142:5000" target="_blank" class="item">
+                    <i class="cubes icon"></i>
+                    区块链管理
+                </a>
+            </th:block>
             <a href="/about" class="item">关于我们</a>
             <div class="right menu">
                 <th:block th:if="${session.user != null}">
@@ -100,6 +111,20 @@
             </div>
         </div>
     </div>
+
+    <!-- 管理员欢迎信息 -->
+    <th:block th:if="${session.user != null && session.user.roleType == 9}">
+        <div class="ui info message" style="margin-top: 6em;">
+            <div class="header">
+                <i class="shield alternate icon"></i>
+                管理员功能
+            </div>
+            <ul class="list">
+                <li>系统管理：用户审核、商品审核、参数配置等</li>
+                <li>区块链管理：FISCO BCOS节点监控、合约管理等</li>
+            </ul>
+        </div>
+    </th:block>
 
     <!-- 主页头部 -->
     <div class="ui vertical masthead center aligned segment">

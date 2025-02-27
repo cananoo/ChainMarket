@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>商品上传 - ChainMarket</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <style>
+        .image-preview-container {
+            margin: 0;
+            height: 100%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .upload-success {
+            background-color: #f8fff8;
+            border-color: #21ba45;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="ui fixed inverted menu">
+        <!-- 导航栏内容 -->
+    </div>
+
+    <div class="ui main container" style="margin-top: 7em;">
+        <h2 class="ui header">上传商品</h2>
+        <form class="ui form">
+            <div class="field">
+                <label>商品名称</label>
+                <input type="text" id="goodsName" placeholder="请输入商品名称">
+            </div>
+            <div class="field">
+                <label>商品分类</label>
+                <select class="ui dropdown" id="categoryId">
+                    <option value="">选择分类</option>
+                </select>
+            </div>
+            <div class="field">
+                <label>商品价格</label>
+                <input type="number" id="price" placeholder="请输入商品价格">
+            </div>
+            <div class="field">
+                <label>商品描述</label>
+                <textarea id="goodsDesc" rows="3" placeholder="请输入商品描述"></textarea>
+            </div>
+            <div class="field">
+                <label>商品图片</label>
+                <input type="file" id="imageFile" accept="image/*" style="display: none">
+                <div class="ui placeholder segment image-preview-container" id="imagePreview" style="cursor: pointer; height: 300px; width: 100%; position: relative;" onclick="$('#imageFile').click()">
+                    <div class="ui icon header">
+                        <i class="image outline icon"></i>
+                        点击上传商品图片
+                    </div>
+                </div>
+                <input type="hidden" id="imageUrl">
+            </div>
+            <button class="ui primary button" type="button" onclick="uploadGoods()">提交</button>
+        </form>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <script>
+        // 加载商品分类
+        $.get('/goods/categories', function(res) {
+            if(res.code === 200) {
+                let html = '<option value="">选择分类</option>';
+                res.data.forEach(category => {
+                    html += `<option value="${category.categoryId}">${category.categoryName}</option>`;
+                });
+                $('#categoryId').html(html);
+            }
+        });
+
+        // 图片上传
+        $('#imageFile').change(function() {
+            const file = this.files[0];
+            if (!file) return;
+            
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                alert('请选择图片文件');
+                return;
+            }
+            
+            // 验证文件大小（最大10MB）
+            if (file.size > 10 * 1024 * 1024) {
+                alert('图片大小不能超过10MB');
+                return;
+            }
+            
+            // 显示上传中状态
+            $('#imagePreview').html(`
+                <div class="ui active dimmer">
+                    <div class="ui text loader">上传中</div>
+                </div>
+            `);
+            
+            // 上传图片
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            $.ajax({
+                url: '/goods/upload/image',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    console.log('服务器响应:', res);
+                    if (res.code === 200) {
+                        // 先保存URL
+                        const imageUrl = res.message;
+                        console.log('获取到的URL:', imageUrl);  // 打印URL
+                        
+                        // 显示上传成功标记
+                        $('#imagePreview').html(`
+                            <div class="ui placeholder segment image-preview-container upload-success">
+                                <div class="ui icon header" style="color: #21ba45;">
+                                    <i class="check circle icon"></i>
+                                    图片上传成功
+                                    <div class="sub header" style="color: #666;">点击可重新上传</div>
+                                </div>
+                            </div>
+                        `);
+                        
+                        // 设置隐藏输入框的值
+                        $('#imageUrl').val(imageUrl);
+                    } else {
+                        alert(res.message || '图片上传失败');
+                        resetImageUpload();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('上传错误:', {xhr, status, error});
+                    alert('图片上传失败');
+                    resetImageUpload();
+                }
+            });
+        });
+        
+        function resetImageUpload() {
+            $('#imagePreview').html(`
+                <div class="ui placeholder segment image-preview-container">
+                    <div class="ui icon header">
+                        <i class="image outline icon"></i>
+                        点击上传商品图片
+                    </div>
+                </div>
+            `);
+            $('#imageUrl').val('');
+            $('#imageFile').val('');
+        }
+
+        // 上传商品
+        function uploadGoods() {
+            const imageUrl = $('#imageUrl').val();
+            
+            const data = {
+                goodsName: $('#goodsName').val(),
+                categoryId: $('#categoryId').val(),
+                price: $('#price').val(),
+                goodsDesc: $('#goodsDesc').val(),
+                imageUrl: imageUrl || ''  // 直接传递图片URL字符串
+            };
+            
+            console.log('提交的数据:', JSON.stringify(data, null, 2));
+            
+            if(!validateForm(data)) return;
+            
+            $.ajax({
+                url: '/goods/upload',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if(res.code === 200) {
+                        alert('商品上传成功，等待审核');
+                        window.location.href = '/user/center';
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+
+        function validateForm(data) {
+            if(!data.goodsName) {
+                alert('请输入商品名称');
+                return false;
+            }
+            if(!data.categoryId) {
+                alert('请选择商品分类');
+                return false;
+            }
+            if(!data.price || data.price <= 0) {
+                alert('请输入正确的商品价格');
+                return false;
+            }
+            if(!data.goodsDesc) {
+                alert('请输入商品描述');
+                return false;
+            }
+            return true;
+        }
+    </script>
+</body>
+</html> 

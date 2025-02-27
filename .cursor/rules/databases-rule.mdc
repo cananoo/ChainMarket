@@ -25,44 +25,9 @@ CREATE TABLE user_info (
     INDEX idx_wallet(walletAddress)
 ) COMMENT '用户信息表';
 
--- 2. 用户钱包表
-CREATE TABLE user_wallet (
-    walletAddress VARCHAR(42) PRIMARY KEY COMMENT '区块链钱包地址',
-    balance DECIMAL(20,8) NOT NULL DEFAULT 0 COMMENT '可用余额',
-    frozenBalance DECIMAL(20,8) NOT NULL DEFAULT 0 COMMENT '冻结余额',
-    walletStatus TINYINT NOT NULL DEFAULT 1 COMMENT '钱包状态(1-正常 2-冻结)',
-    createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    updateTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间'
-) COMMENT '用户钱包表';
 
--- 3. 钱包交易记录表
-CREATE TABLE wallet_transaction (
-    transactionId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '交易ID',
-    txHash VARCHAR(66) NOT NULL UNIQUE COMMENT '交易哈希',
-    walletAddress VARCHAR(42) NOT NULL COMMENT '钱包地址',
-    contractAddress VARCHAR(42) COMMENT '合约地址',
-    methodName VARCHAR(100) COMMENT '调用方法名',
-    methodParams TEXT COMMENT '方法参数',
-    businessType TINYINT NOT NULL COMMENT '业务类型(1-订单 2-评价 3-仲裁 4-充值 5-提现)',
-    businessId BIGINT COMMENT '业务ID',
-    amount DECIMAL(20,8) NOT NULL COMMENT '交易金额',
-    balance DECIMAL(20,8) NOT NULL COMMENT '交易后余额',
-    blockHeight BIGINT COMMENT '区块高度',
-    blockTime DATETIME COMMENT '区块时间',
-    status TINYINT NOT NULL DEFAULT 0 COMMENT '交易状态(0-处理中 1-成功 2-失败)',
-    errorMsg VARCHAR(255) COMMENT '错误信息',
-    remark VARCHAR(255) COMMENT '交易备注',
-    createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    confirmTime DATETIME COMMENT '确认时间',
-    INDEX idx_tx_hash(txHash),
-    INDEX idx_wallet(walletAddress),
-    INDEX idx_contract(contractAddress),
-    INDEX idx_business(businessType, businessId),
-    INDEX idx_block(blockHeight),
-    FOREIGN KEY (walletAddress) REFERENCES user_wallet(walletAddress)
-) COMMENT '钱包交易记录表';
 
--- 4. 统一审核表
+-- 2. 统一审核表
 CREATE TABLE audit_info (
     auditId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '审核ID',
     objectId BIGINT NOT NULL COMMENT '审核对象ID',
@@ -76,14 +41,14 @@ CREATE TABLE audit_info (
     FOREIGN KEY (auditorId) REFERENCES user_info(userId)
 ) COMMENT '审核信息表';
 
--- 5. 商品分类表
+-- 3. 商品分类表
 CREATE TABLE goods_category (
     categoryId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '分类ID',
     categoryName VARCHAR(50) NOT NULL COMMENT '分类名称',
     createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间'
 ) COMMENT '商品分类表';
 
--- 6. 商品信息表
+-- 4. 商品信息表
 CREATE TABLE goods_info (
     goodsId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '商品ID',
     categoryId BIGINT NOT NULL COMMENT '分类ID',
@@ -95,6 +60,7 @@ CREATE TABLE goods_info (
     status TINYINT NOT NULL DEFAULT 0 COMMENT '状态(0-待审核 1-已上架 2-已下架 3-已售出)',
     createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updateTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    imageUrl varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '商品图片URL',
     INDEX idx_category(categoryId),
     INDEX idx_seller(sellerId),
     INDEX idx_status(status),
@@ -102,17 +68,9 @@ CREATE TABLE goods_info (
     FOREIGN KEY (sellerId) REFERENCES user_info(userId)
 ) COMMENT '商品信息表';
 
--- 7. 商品图片表
-CREATE TABLE goods_image (
-    imageId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '图片ID',
-    goodsId BIGINT NOT NULL COMMENT '商品ID',
-    imageUrl VARCHAR(255) NOT NULL COMMENT '图片URL',
-    createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    INDEX idx_goods(goodsId),
-    FOREIGN KEY (goodsId) REFERENCES goods_info(goodsId)
-) COMMENT '商品图片表';
 
--- 8. 订单表
+
+-- 6. 订单表
 CREATE TABLE order_info (
     orderId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '订单ID',
     orderNo VARCHAR(32) NOT NULL UNIQUE COMMENT '订单编号',
@@ -137,7 +95,7 @@ CREATE TABLE order_info (
     FOREIGN KEY (sellerId) REFERENCES user_info(userId)
 ) COMMENT '订单信息表';
 
--- 9. 订单评价表
+-- 7. 订单评价表
 CREATE TABLE order_review (
     reviewId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '评价ID',
     orderId BIGINT NOT NULL COMMENT '订单ID',
@@ -153,7 +111,7 @@ CREATE TABLE order_review (
     FOREIGN KEY (buyerId) REFERENCES user_info(userId)
 ) COMMENT '订单评价表';
 
--- 10. 仲裁案件表
+-- 8. 仲裁案件表
 CREATE TABLE arbitration_case (
     caseId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '案件ID',
     caseNo VARCHAR(32) NOT NULL UNIQUE COMMENT '案件编号',
@@ -172,7 +130,7 @@ CREATE TABLE arbitration_case (
     FOREIGN KEY (initiatorId) REFERENCES user_info(userId)
 ) COMMENT '仲裁案件表';
 
--- 11. 仲裁证据表
+-- 9. 仲裁证据表
 CREATE TABLE arbitration_evidence (
     evidenceId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '证据ID',
     caseId BIGINT NOT NULL COMMENT '案件ID',
@@ -189,7 +147,7 @@ CREATE TABLE arbitration_evidence (
     FOREIGN KEY (userId) REFERENCES user_info(userId)
 ) COMMENT '仲裁证据表';
 
--- 12. 仲裁投票表
+-- 10. 仲裁投票表
 CREATE TABLE arbitration_vote (
     voteId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '投票ID',
     caseId BIGINT NOT NULL COMMENT '案件ID',
@@ -205,7 +163,7 @@ CREATE TABLE arbitration_vote (
     FOREIGN KEY (arbitratorId) REFERENCES user_info(userId)
 ) COMMENT '仲裁投票表';
 
--- 13. 仲裁奖励表
+-- 11. 仲裁奖励表
 CREATE TABLE arbitration_reward (
     rewardId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '奖励ID',
     caseId BIGINT NOT NULL COMMENT '案件ID',
@@ -222,7 +180,7 @@ CREATE TABLE arbitration_reward (
     FOREIGN KEY (arbitratorId) REFERENCES user_info(userId)
 ) COMMENT '仲裁奖励表';
 
--- 14. 系统参数表
+-- 12. 系统参数表
 CREATE TABLE sys_param (
     paramId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '参数ID',
     paramKey VARCHAR(50) NOT NULL UNIQUE COMMENT '参数键',
@@ -233,7 +191,7 @@ CREATE TABLE sys_param (
     INDEX idx_key(paramKey)
 ) COMMENT '系统参数表';
 
--- 15. 智能合约管理表
+-- 13. 智能合约管理表
 CREATE TABLE chain_contract (
     contractId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '合约ID',
     contractName VARCHAR(100) NOT NULL COMMENT '合约名称',
@@ -249,7 +207,7 @@ CREATE TABLE chain_contract (
     INDEX idx_status(contractStatus)
 ) COMMENT '智能合约管理表';
 
--- 16. 数据存证表
+-- 14. 数据存证表
 CREATE TABLE chain_evidence (
     evidenceId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '存证ID',
     evidenceHash VARCHAR(64) NOT NULL UNIQUE COMMENT '存证哈希',

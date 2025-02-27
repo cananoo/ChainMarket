@@ -35,6 +35,9 @@ public class Goods {
     
     private Integer status;    // 0-待审核 1-已上架 2-已下架 3-已售出
     
+    @TableField("imageUrl")
+    private String imageUrl;   // 商品图片URL
+    
     @TableField(value = "createTime", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
     

@@ -24,7 +24,7 @@ public class User {
     private Integer status;    // 0-待审核 1-正常 2-禁用
     
     @TableField("walletAddress")
-    private String walletAddress;
+    private String walletAddress;  // 用户钱包地址
     
     @TableField(value = "createTime", fill = FieldFill.INSERT)
     private LocalDateTime createTime;

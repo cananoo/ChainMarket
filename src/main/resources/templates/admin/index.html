@@ -311,8 +311,57 @@
             $.get('/admin/users', params, function(res) {
                 if(res.code === 200) {
                     renderUserList(res.data);
+                } else {
+                    alert(res.message);
                 }
             });
+        }
+        
+        // 渲染用户列表
+        function renderUserList(users) {
+            let html = '';
+            users.forEach(user => {
+                html += `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.phone}</td>
+                        <td>${getRoleType(user.roleType)}</td>
+                        <td>${getUserStatus(user.status)}</td>
+                        <td>${formatDateTime(user.createTime)}</td>
+                        <td>
+                            ${user.status === 1 ? 
+                                `<button class="ui tiny negative button" onclick="updateUserStatus(${user.userId}, 2)">禁用</button>` :
+                                user.status === 2 ?
+                                `<button class="ui tiny positive button" onclick="updateUserStatus(${user.userId}, 1)">启用</button>` :
+                                ''
+                            }
+                        </td>
+                    </tr>
+                `;
+            });
+            $('#userList').html(html);
+        }
+        
+        // 格式化日期时间
+        function formatDateTime(dateTimeStr) {
+            if (!dateTimeStr) return '';
+            const date = new Date(dateTimeStr);
+            return date.getFullYear() + '-' + 
+                   String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                   String(date.getDate()).padStart(2, '0') + ' ' +
+                   String(date.getHours()).padStart(2, '0') + ':' +
+                   String(date.getMinutes()).padStart(2, '0') + ':' +
+                   String(date.getSeconds()).padStart(2, '0');
+        }
+        
+        // 获取用户状态显示文本
+        function getUserStatus(status) {
+            switch(status) {
+                case 0: return '<div class="ui yellow label">待审核</div>';
+                case 1: return '<div class="ui green label">正常</div>';
+                case 2: return '<div class="ui red label">已禁用</div>';
+                default: return '<div class="ui grey label">未知</div>';
+            }
         }
         
         // 加载系统参数
@@ -358,6 +407,11 @@
         loadPendingUsers();
         loadPendingGoods();
         loadParams();
+
+        // 页面加载完成后自动执行一次搜索
+        $(document).ready(function() {
+            searchUsers();
+        });
     </script>
 </body>
 </html> 

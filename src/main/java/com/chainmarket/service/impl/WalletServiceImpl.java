@@ -18,4 +18,6 @@ public class WalletServiceImpl implements IWalletService {
         // 添加"0x"前缀
         return "0x" + uuid;
     }
+    
+    // 其他钱包相关操作直接调用FISCO BCOS的API
 } 

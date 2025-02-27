@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.chainmarket.entity.User;
 import org.apache.ibatis.annotations.Mapper;
 import java.util.List;
+import org.springframework.util.StringUtils;
 
 /**
  * 用户数据访问层
@@ -47,5 +48,20 @@ public interface UserDao extends BaseMapper<User> {
         return selectList(new QueryWrapper<User>()
                 .eq("status", 0)
                 .orderByDesc("createTime"));
+    }
+    
+    /**
+     * 条件查询用户列表
+     */
+    default List<User> searchUsers(String username, Integer roleType) {
+        QueryWrapper<User> wrapper = new QueryWrapper<>();
+        if (StringUtils.hasText(username)) {
+            wrapper.like("username", username);
+        }
+        if (roleType != null) {
+            wrapper.eq("roleType", roleType);
+        }
+        wrapper.orderByDesc("createTime");
+        return selectList(wrapper);
     }
 } 
