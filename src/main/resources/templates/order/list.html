@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>我的订单 - ChainMarket</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+</head>
+<body>
+    <div class="ui container" style="padding-top: 7em;">
+        <div class="ui top attached tabular menu">
+            <a class="active item" data-tab="buy">我购买的</a>
+            <a class="item" data-tab="sell">我卖出的</a>
+        </div>
+        
+        <!-- 购买订单 -->
+        <div class="ui bottom attached active tab segment" data-tab="buy">
+            <table class="ui celled table">
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>商品ID</th>
+                        <th>金额</th>
+                        <th>状态</th>
+                        <th>物流状态</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="order : ${buyOrders}">
+                        <td th:text="${order.orderNo}">订单号</td>
+                        <td th:text="${order.goodsId}">商品ID</td>
+                        <td th:text="${order.amount}">金额</td>
+                        <td th:text="${
+                            order.status == 0 ? '待支付' :
+                            order.status == 1 ? '待发货' :
+                            order.status == 2 ? '待收货' :
+                            order.status == 3 ? '已完成' :
+                            order.status == 4 ? '已取消' : '未知'
+                        }">状态</td>
+                        <td th:text="${
+                            order.logisticsStatus == 1 ? '待发货' :
+                            order.logisticsStatus == 2 ? '运输中' :
+                            order.logisticsStatus == 3 ? '已送达' : '-'
+                        }">物流状态</td>
+                        <td th:text="${#temporals.format(order.createTime, 'yyyy-MM-dd HH:mm')}">创建时间</td>
+                        <td>
+                            <button th:if="${order.status == 1}" 
+                                    class="ui primary tiny button"
+                                    th:onclick="'confirmOrder(' + ${order.orderId} + ')'">
+                                确认收货
+                            </button>
+                            <button th:if="${order.status == 0}" 
+                                    class="ui negative tiny button"
+                                    th:onclick="'cancelOrder(' + ${order.orderId} + ')'">
+                                取消订单
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 卖出订单 -->
+        <div class="ui bottom attached tab segment" data-tab="sell">
+            <table class="ui celled table">
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>商品ID</th>
+                        <th>价格</th>
+                        <th>状态</th>
+                        <th>创建时间</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="order : ${sellOrders}">
+                        <td th:text="${order.orderId}">订单号</td>
+                        <td th:text="${order.goodsId}">商品ID</td>
+                        <td th:text="${order.price}">价格</td>
+                        <td th:text="${
+                            order.status == 0 ? '待支付' :
+                            order.status == 1 ? '已支付待确认' :
+                            order.status == 2 ? '已完成' :
+                            order.status == 3 ? '已取消' :
+                            order.status == 4 ? '申请仲裁' : '未知'
+                        }">状态</td>
+                        <td th:text="${#temporals.format(order.createTime, 'yyyy-MM-dd HH:mm')}">创建时间</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <script>
+        $('.menu .item').tab();
+        
+        function confirmOrder(orderId) {
+            if(confirm('确认已收到商品?')) {
+                $.post('/order/confirm/' + orderId, function(res) {
+                    if(res.code === 200) {
+                        alert('确认成功');
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            }
+        }
+        
+        function cancelOrder(orderId) {
+            if(confirm('确定要取消订单?')) {
+                $.post('/order/cancel/' + orderId, function(res) {
+                    if(res.code === 200) {
+                        alert('取消成功');
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html> 

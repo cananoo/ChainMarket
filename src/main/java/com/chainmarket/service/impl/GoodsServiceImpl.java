@@ -46,7 +46,6 @@ public class GoodsServiceImpl implements IGoodsService {
         goods.setPrice(goodsDTO.getPrice());
         goods.setSellerId(sellerId);
         goods.setStatus(0);  // 待审核状态
-        goods.setOwnerHistory(sellerId.toString());
         
         // 设置商品图片URL
         String imageUrl = goodsDTO.getImageUrl();
@@ -95,6 +94,14 @@ public class GoodsServiceImpl implements IGoodsService {
     }
     
     @Override
+    public List<Goods> getOnSaleGoodsByCategory(Long categoryId) {
+        return goodsDao.selectList(new QueryWrapper<Goods>()
+                .eq("status", 1)  // 已上架状态
+                .eq("categoryId", categoryId)
+                .orderByDesc("createTime"));
+    }
+    
+    @Override
     public List<Goods> getSellerGoods(Long sellerId) {
         return goodsDao.selectList(new QueryWrapper<Goods>()
                 .eq("sellerId", sellerId)
@@ -119,9 +126,6 @@ public class GoodsServiceImpl implements IGoodsService {
         if (goods.getStatus() == 0) {
             throw new BusinessException("商品待审核，不能变更状态");
         }
-        if (goods.getStatus() == 3) {
-            throw new BusinessException("商品已售出，不能变更状态");
-        }
         if (status != 1 && status != 2) {
             throw new BusinessException("无效的商品状态");
         }
@@ -129,5 +133,22 @@ public class GoodsServiceImpl implements IGoodsService {
         // 更新商品状态
         goods.setStatus(status);
         goodsDao.updateById(goods);
+    }
+    
+    @Override
+    public Goods getGoodsDetail(Long goodsId) {
+        Goods goods = goodsDao.selectById(goodsId);
+        if (goods == null) {
+            throw new BusinessException("商品不存在");
+        }
+        return goods;
+    }
+    
+    @Override
+    public List<Goods> getLatestGoods(int limit) {
+        return goodsDao.selectList(new QueryWrapper<Goods>()
+                .eq("status", 1)  // 已上架状态
+                .orderByDesc("createTime")
+                .last("LIMIT " + limit));
     }
 } 

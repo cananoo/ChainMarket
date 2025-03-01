@@ -1,14 +1,17 @@
 package com.chainmarket.controller;
 
 import com.chainmarket.entity.User;
-import com.chainmarket.common.Result;
+import com.chainmarket.entity.Order;
+import com.chainmarket.service.IOrderService;
 import com.chainmarket.service.impl.UserServiceImpl;
+import com.chainmarket.common.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpSession;
+import java.util.List;
 
 @Controller
 @RequestMapping("/user")
@@ -16,6 +19,9 @@ public class UserController {
 
     @Autowired
     private UserServiceImpl userService;
+
+    @Autowired
+    private IOrderService orderService;
 
     /**
      * 跳转到注册页面
@@ -72,12 +78,20 @@ public class UserController {
     }
 
     @GetMapping("/center")
-    public String center(Model model, HttpSession session) {
+    public String center(HttpSession session, Model model) {
         User user = (User) session.getAttribute("user");
         if (user == null) {
             return "redirect:/user/login";
         }
+        
         model.addAttribute("user", user);
+        
+        // 获取用户订单数据
+        List<Order> buyOrders = orderService.getBuyerOrders(user.getUserId());
+        List<Order> sellOrders = orderService.getSellerOrders(user.getUserId());
+        model.addAttribute("buyOrders", buyOrders);
+        model.addAttribute("sellOrders", sellOrders);
+        
         return "user/center";
     }
 } 

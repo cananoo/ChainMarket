@@ -15,7 +15,7 @@ CREATE TABLE user_info (
     username VARCHAR(20) NOT NULL UNIQUE COMMENT '用户名',
     password VARCHAR(32) NOT NULL COMMENT '密码(MD5加密)',
     phone VARCHAR(11) NOT NULL COMMENT '手机号',
-    roleType TINYINT NOT NULL DEFAULT 1 COMMENT '角色类型(1-买家 2-卖家 3-仲裁员 4-管理员)',
+    roleType TINYINT NOT NULL DEFAULT 1 COMMENT '角色类型(1-普通用户,9-管理员)',
     status TINYINT NOT NULL DEFAULT 0 COMMENT '状态(0-待审核 1-正常 2-禁用)',
     walletAddress VARCHAR(42) COMMENT '区块链钱包地址',
     createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
@@ -53,11 +53,10 @@ CREATE TABLE goods_info (
     goodsId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '商品ID',
     categoryId BIGINT NOT NULL COMMENT '分类ID',
     sellerId BIGINT NOT NULL COMMENT '卖家ID',
-    owner_history TEXT COMMENT '历史拥有者ID列表(逗号分隔)',
     goodsName VARCHAR(50) NOT NULL COMMENT '商品名称',
     goodsDesc TEXT NOT NULL COMMENT '商品描述',
     price DECIMAL(10,2) NOT NULL COMMENT '商品价格',
-    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态(0-待审核 1-已上架 2-已下架 3-已售出)',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态(0-待审核 1-已上架 2-已下架)',
     createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updateTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     imageUrl varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '商品图片URL',
@@ -68,7 +67,21 @@ CREATE TABLE goods_info (
     FOREIGN KEY (sellerId) REFERENCES user_info(userId)
 ) COMMENT '商品信息表';
 
+--4.5 商品历史表
 
+CREATE TABLE `goods_history` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '记录ID',
+    `goodsId` bigint NOT NULL COMMENT '商品ID',
+    `userId` bigint NOT NULL COMMENT '历史拥有者ID',
+    `startTime` datetime NOT NULL COMMENT '开始拥有时间',
+    `endTime` datetime NOT NULL COMMENT '结束拥有时间',
+    `txHash` varchar(66) DEFAULT NULL COMMENT '区块链交易哈希',
+    PRIMARY KEY (`id`),
+    KEY `idx_goods` (`goodsId`),
+    KEY `idx_user` (`userId`),
+    FOREIGN KEY (`goodsId`) REFERENCES `goods_info` (`goodsId`),
+    FOREIGN KEY (`userId`) REFERENCES `user_info` (`userId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='商品历史记录表';
 
 -- 6. 订单表
 CREATE TABLE order_info (
@@ -78,9 +91,8 @@ CREATE TABLE order_info (
     buyerId BIGINT NOT NULL COMMENT '买家ID',
     sellerId BIGINT NOT NULL COMMENT '卖家ID',
     amount DECIMAL(10,2) NOT NULL COMMENT '订单金额',
-    status TINYINT NOT NULL DEFAULT 0 COMMENT '订单状态(0-待支付 1-待发货 2-待收货 3-已完成 4-已取消)',
+    status TINYINT NOT NULL DEFAULT 0 COMMENT '订单状态(1-待发货 2-待收货 3-已完成 4-已取消)',
     trackingNo VARCHAR(32) COMMENT '物流单号',
-    logisticsStatus TINYINT COMMENT '物流状态(1-待发货 2-运输中 3-已送达)',
     txHash VARCHAR(66) COMMENT '区块链交易哈希',
     createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     payTime DATETIME COMMENT '支付时间',

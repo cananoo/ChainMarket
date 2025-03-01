@@ -21,6 +21,21 @@
             height: 100%;
             object-fit: cover;
         }
+        .ui.basic.button.active {
+            background-color: #2185d0 !important;
+            color: white !important;
+            box-shadow: none !important;
+        }
+        .ui.horizontal.list .item {
+            margin-right: 0.5em;
+        }
+        .ui.basic.button {
+            transition: all 0.3s ease;
+        }
+        .ui.basic.button:hover {
+            background-color: #f8f9fa !important;
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -44,6 +59,10 @@
                     <div class="item">
                         <i class="user icon"></i>
                         <span th:text="${session.user.username}">用户名</span>
+                        <span class="ui label" th:text="${
+                            session.user.roleType == 1 ? '普通用户' :
+                            session.user.roleType == 9 ? '管理员' : '未知'
+                        }">角色</span>
                     </div>
                     <a href="/user/center" class="item">个人中心</a>
                     <a href="/user/logout" class="item">退出</a>
@@ -58,11 +77,11 @@
 
     <div class="ui main container">
         <!-- 卖家功能区 -->
-        <div class="ui segment" th:if="${isSeller}">
+        <div class="ui segment" th:if="${session.user != null && session.user.roleType == 1}">
             <h3 class="ui header">
                 <i class="shop icon"></i>
                 <div class="content">
-                    我的商品
+                    我发布的商品
                     <div class="sub header">管理您的商品</div>
                 </div>
             </h3>
@@ -121,10 +140,12 @@
         <div class="ui segment">
             <div class="ui horizontal list">
                 <div class="item">
-                    <a class="ui basic button active" href="/market">全部</a>
+                    <a class="ui basic button" th:classappend="${currentCategoryId == null ? 'active' : ''}" href="/market">全部</a>
                 </div>
                 <div class="item" th:each="category : ${categories}">
-                    <a class="ui basic button" th:href="@{/market(categoryId=${category.categoryId})}" 
+                    <a class="ui basic button" 
+                       th:classappend="${category.categoryId == currentCategoryId ? 'active' : ''}"
+                       th:href="@{/market(categoryId=${category.categoryId})}" 
                        th:text="${category.categoryName}">分类名称</a>
                 </div>
             </div>
@@ -171,6 +192,9 @@
                     } else {
                         alert(res.message);
                     }
+                },
+                error: function(xhr, status, error) {
+                    alert('操作失败: ' + error);
                 }
             });
         }

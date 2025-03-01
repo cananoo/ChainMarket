@@ -72,7 +72,7 @@ public class UserServiceImpl implements IUserService {
         // 密码加密(使用MD5)
         user.setPassword(PasswordEncoder.encode(user.getPassword()));
         // 验证角色类型
-        if (user.getRoleType() == null || user.getRoleType() < 1 || user.getRoleType() > 3) {
+        if (user.getRoleType() == null || (user.getRoleType() != 1 && user.getRoleType() != 9)) {
             throw new BusinessException("无效的角色类型");
         }
         

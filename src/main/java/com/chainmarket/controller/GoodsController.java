@@ -1,6 +1,7 @@
 package com.chainmarket.controller;
 
 import com.chainmarket.dto.GoodsUploadDTO;
+import com.chainmarket.entity.Goods;
 import com.chainmarket.entity.User;
 import com.chainmarket.service.IGoodsService;
 import com.chainmarket.service.IImageService;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpSession;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.ui.Model;
 
 @Controller
 @RequestMapping("/goods")
@@ -33,8 +35,8 @@ public class GoodsController {
         if (user == null) {
             return Result.error("请先登录");
         }
-        if (user.getRoleType() != 2) {
-            return Result.error("只有卖家才能上传商品");
+        if (user.getRoleType() != 1) {
+            return Result.error("只有普通用户才能发布商品");
         }
         
         // 打印关键信息
@@ -62,8 +64,8 @@ public class GoodsController {
             @RequestParam Integer status,
             HttpSession session) {
         User user = (User) session.getAttribute("user");
-        if (user == null || user.getRoleType() != 2) {
-            return Result.error("无权限操作");
+        if (user == null) {
+            return Result.error("请先登录");
         }
         
         try {
@@ -88,5 +90,13 @@ public class GoodsController {
             System.out.println("图片上传失败: " + e.getMessage());
             return Result.error(e.getMessage());
         }
+    }
+    
+    @GetMapping("/detail/{id}")
+    public String detail(@PathVariable Long id, Model model) {
+        // 获取商品详情
+        Goods goods = goodsService.getGoodsDetail(id);
+        model.addAttribute("goods", goods);
+        return "goods/detail";
     }
 } 

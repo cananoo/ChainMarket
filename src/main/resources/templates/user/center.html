@@ -45,6 +45,10 @@
                         <i class="user icon"></i>
                         基本信息
                     </a>
+                    <a class="item" data-tab="orders">
+                        <i class="shopping cart icon"></i>
+                        我的订单
+                    </a>
                     <a class="item" data-tab="wallet">
                         <i class="wallet icon"></i>
                         钱包信息
@@ -55,10 +59,6 @@
                             我的商品
                         </a>
                     </th:block>
-                    <a class="item" data-tab="orders">
-                        <i class="list icon"></i>
-                        我的订单
-                    </a>
                 </div>
             </div>
             
@@ -89,9 +89,7 @@
                                     <div class="header">角色类型</div>
                                     <div class="description">
                                         <div class="ui label" th:text="${
-                                            user.roleType == 1 ? '买家' :
-                                            user.roleType == 2 ? '卖家' :
-                                            user.roleType == 3 ? '仲裁员' :
+                                            user.roleType == 1 ? '普通用户' :
                                             user.roleType == 9 ? '管理员' : '未知'
                                         }">角色</div>
                                     </div>
@@ -126,7 +124,99 @@
                     </div>
                 </div>
                 
-                <!-- 其他标签页可以根据需要添加 -->
+                <!-- 订单信息 -->
+                <div class="ui tab segment" data-tab="orders">
+                    <div class="user-info">
+                        <h3 class="ui dividing header">我的订单</h3>
+                        <div class="ui top attached tabular menu">
+                            <a class="active item" data-tab="orders/buy">我购买的</a>
+                            <a class="item" data-tab="orders/sell">我卖出的</a>
+                        </div>
+                        
+                        <!-- 购买订单 -->
+                        <div class="ui bottom attached active tab segment" data-tab="orders/buy">
+                            <table class="ui celled table">
+                                <thead>
+                                    <tr>
+                                        <th>订单号</th>
+                                        <th>商品ID</th>
+                                        <th>金额</th>
+                                        <th>状态</th>
+                                        <th>创建时间</th>
+                                        <th>物流单号</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="order : ${buyOrders}" th:if="${order != null}">
+                                        <td th:text="${order.orderNo}">订单号</td>
+                                        <td th:text="${order.goodsId}">商品ID</td>
+                                        <td th:text="${order.amount}">金额</td>
+                                        <td th:text="${
+                                            order.status == 1 ? '待发货' :
+                                            order.status == 2 ? '待收货' :
+                                            order.status == 3 ? '已完成' :
+                                            order.status == 4 ? '已取消' : '未知'
+                                        }">状态</td>
+                                        <td th:text="${#temporals.format(order.createTime, 'yyyy-MM-dd HH:mm')}">创建时间</td>
+                                        <td th:text="${order.trackingNo != null ? order.trackingNo : '暂无'}">物流单号</td>
+                                        <td>
+                                            <button th:if="${order.status == 2 && order.trackingNo != null}" 
+                                                    class="ui primary tiny button"
+                                                    th:onclick="'receiveOrder(' + ${order.orderId} + ')'">
+                                                确认收货
+                                            </button>
+                                            <button th:if="${order.status == 0}" 
+                                                    class="ui negative tiny button"
+                                                    th:onclick="'cancelOrder(' + ${order.orderId} + ')'">
+                                                取消订单
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- 卖出订单 -->
+                        <div class="ui bottom attached tab segment" data-tab="orders/sell">
+                            <table class="ui celled table">
+                                <thead>
+                                    <tr>
+                                        <th>订单号</th>
+                                        <th>商品ID</th>
+                                        <th>金额</th>
+                                        <th>状态</th>
+                                        <th>创建时间</th>
+                                        <th>物流单号</th>
+                                        <th>操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="order : ${sellOrders}" th:if="${order != null}">
+                                        <td th:text="${order.orderNo}">订单号</td>
+                                        <td th:text="${order.goodsId}">商品ID</td>
+                                        <td th:text="${order.amount}">金额</td>
+                                        <td th:text="${
+                                            order.status == 1 ? '待发货' :
+                                            order.status == 2 ? '待收货' :
+                                            order.status == 3 ? '已完成' :
+                                            order.status == 4 ? '已取消' : '未知'
+                                        }">状态</td>
+                                        <td th:text="${#temporals.format(order.createTime, 'yyyy-MM-dd HH:mm')}">创建时间</td>
+                                        <td th:text="${order.trackingNo != null ? order.trackingNo : '暂无'}">物流单号</td>
+                                        <td>
+                                            <button th:if="${order.status == 1}" 
+                                                    class="ui primary tiny button"
+                                                    th:onclick="'shipOrder(' + ${order.orderId} + ')'">
+                                                发货
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -135,6 +225,58 @@
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
     <script>
         $('.menu .item').tab();
+        
+        function confirmOrder(orderId) {
+            if(confirm('确认已收到商品?')) {
+                $.post('/order/confirm/' + orderId, function(res) {
+                    if(res.code === 200) {
+                        alert('确认成功');
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            }
+        }
+        
+        function cancelOrder(orderId) {
+            if(confirm('确定要取消订单?')) {
+                $.post('/order/cancel/' + orderId, function(res) {
+                    if(res.code === 200) {
+                        alert('取消成功');
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            }
+        }
+        
+        function shipOrder(orderId) {
+            if(confirm('确认发货?')) {
+                $.post('/order/ship/' + orderId, function(res) {
+                    if(res.code === 200) {
+                        alert('发货成功');
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            }
+        }
+        
+        function receiveOrder(orderId) {
+            if(confirm('确认已收到商品?')) {
+                $.post('/order/receive/' + orderId, function(res) {
+                    if(res.code === 200) {
+                        alert('确认收货成功');
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            }
+        }
     </script>
 </body>
 </html> 

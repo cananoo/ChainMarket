@@ -32,9 +32,19 @@ public interface IGoodsService {
     List<Goods> getOnSaleGoods();
     
     /**
+     * 按分类获取已上架商品列表
+     */
+    List<Goods> getOnSaleGoodsByCategory(Long categoryId);
+    
+    /**
      * 获取卖家的商品列表
      */
     List<Goods> getSellerGoods(Long sellerId);
+    
+    /**
+     * 获取商品详情
+     */
+    Goods getGoodsDetail(Long goodsId);
     
     /**
      * 更新商品状态
@@ -43,4 +53,11 @@ public interface IGoodsService {
      * @param sellerId 卖家ID（用于验证权限）
      */
     void updateGoodsStatus(Long goodsId, Integer status, Long sellerId);
+    
+    /**
+     * 获取最新上架的商品
+     * @param limit 限制数量
+     * @return 商品列表
+     */
+    List<Goods> getLatestGoods(int limit);
 } 

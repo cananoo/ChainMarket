@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import javax.servlet.http.HttpSession;
 
 @Controller
@@ -17,17 +18,18 @@ public class MarketController {
     private IGoodsService goodsService;
     
     @GetMapping
-    public String market(Model model, HttpSession session) {
+    public String market(Model model, HttpSession session, @RequestParam(required = false) Long categoryId) {
         // 获取商品分类
         model.addAttribute("categories", goodsService.getCategories());
-        // 获取已上架商品列表
-        model.addAttribute("goodsList", goodsService.getOnSaleGoods());
         
-        // 如果是卖家，获取其商品列表
-        User user = (User) session.getAttribute("user");
-        if (user != null && user.getRoleType() == 2) {
-            model.addAttribute("myGoods", goodsService.getSellerGoods(user.getUserId()));
-            model.addAttribute("isSeller", true);
+        // 获取当前选中的分类
+        model.addAttribute("currentCategoryId", categoryId);
+        
+        // 获取已上架商品列表
+        if (categoryId != null) {
+            model.addAttribute("goodsList", goodsService.getOnSaleGoodsByCategory(categoryId));
+        } else {
+            model.addAttribute("goodsList", goodsService.getOnSaleGoods());
         }
         
         return "market/index";

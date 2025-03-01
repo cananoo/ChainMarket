@@ -105,9 +105,8 @@
                             <div class="field">
                                 <select class="ui dropdown" id="searchRole">
                                     <option value="">所有角色</option>
-                                    <option value="1">买家</option>
-                                    <option value="2">卖家</option>
-                                    <option value="3">仲裁员</option>
+                                    <option value="1">普通用户</option>
+                                    <option value="9">管理员</option>
                                 </select>
                             </div>
                             <div class="field">
@@ -293,9 +292,7 @@
         // 获取角色类型显示文本
         function getRoleType(type) {
             switch(type) {
-                case 1: return '买家';
-                case 2: return '卖家';
-                case 3: return '仲裁员';
+                case 1: return '普通用户';
                 case 9: return '管理员';
                 default: return '未知';
             }

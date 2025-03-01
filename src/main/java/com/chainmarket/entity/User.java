@@ -18,7 +18,7 @@ public class User {
     private String phone;
     
     @TableField("roleType")
-    private Integer roleType;  // 1-买家 2-卖家 3-仲裁员 4-管理员
+    private Integer roleType;  // 1-普通用户(可买卖/参与仲裁) 9-管理员
     
     @TableField("status")
     private Integer status;    // 0-待审核 1-正常 2-禁用

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${goods.goodsName + ' - ChainMarket'}">商品详情</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <style>
+        .main.container {
+            margin-top: 7em;
+            margin-bottom: 3em;
+        }
+        .goods-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 4px;
+        }
+        .price {
+            color: #db2828;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .description {
+            margin: 2em 0;
+            white-space: pre-wrap;
+        }
+        .status-label {
+            margin-left: 1em !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div class="ui fixed inverted menu">
+        <div class="ui container">
+            <a href="/" class="header item">
+                <i class="chain icon"></i>
+                ChainMarket
+            </a>
+            <a href="/market" class="item">商品市场</a>
+            <a href="/about" class="item">关于我们</a>
+            <div class="right menu">
+                <th:block th:if="${session.user != null}">
+                    <div class="item">
+                        <i class="user icon"></i>
+                        <span th:text="${session.user.username}">用户名</span>
+                    </div>
+                    <a href="/user/center" class="item">个人中心</a>
+                    <a href="/user/logout" class="item">退出</a>
+                </th:block>
+                <th:block th:if="${session.user == null}">
+                    <a href="/user/register" class="item">注册</a>
+                    <a href="/user/login" class="item">登录</a>
+                </th:block>
+            </div>
+        </div>
+    </div>
+
+    <div class="ui main container">
+        <div class="ui grid">
+            <!-- 左侧商品图片 -->
+            <div class="eight wide column">
+                <img th:src="${goods.imageUrl != null ? goods.imageUrl : '/images/default.png'}" 
+                     alt="商品图片" class="goods-image">
+            </div>
+            
+            <!-- 右侧商品信息 -->
+            <div class="eight wide column">
+                <h1 class="ui header" th:text="${goods.goodsName}">商品名称</h1>
+                
+                <div class="ui divider"></div>
+                
+                <div class="price">
+                    ￥<span th:text="${goods.price}">价格</span>
+                    <div class="ui label status-label"
+                         th:classappend="${
+                            goods.status == 0 ? 'yellow' : 
+                            goods.status == 1 ? 'green' : 
+                            goods.status == 2 ? 'grey' :
+                            goods.status == 3 ? 'blue' : ''
+                         }"
+                         th:text="${
+                            goods.status == 0 ? '待审核' :
+                            goods.status == 1 ? '已上架' :
+                            goods.status == 2 ? '已下架' :
+                            goods.status == 3 ? '已售出' : '未知'
+                         }">
+                        状态
+                    </div>
+                </div>
+                
+                <div class="description">
+                    <h4 class="ui header">商品描述</h4>
+                    <p th:text="${goods.goodsDesc}">商品描述内容</p>
+                </div>
+                
+                <div class="ui segment">
+                    <h4 class="ui header">交易信息</h4>
+                    <div class="ui list">
+                        <div class="item">
+                            <i class="calendar icon"></i>
+                            <div class="content">
+                                <div class="header">发布时间</div>
+                                <div class="description" 
+                                     th:text="${#temporals.format(goods.createTime, 'yyyy-MM-dd HH:mm')}">
+                                    发布时间
+                                </div>
+                            </div>
+                        </div>
+                        <div class="item">
+                            <i class="history icon"></i>
+                            <div class="content">
+                                <div class="header">更新时间</div>
+                                <div class="description" 
+                                     th:text="${#temporals.format(goods.updateTime, 'yyyy-MM-dd HH:mm')}">
+                                    更新时间
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 购买按钮 -->
+                <div th:if="${goods.status == 1 && session.user != null && session.user.roleType == 1 && goods.sellerId != session.user.userId}">
+                    <button class="ui primary button fluid large" onclick="buyGoods()">
+                        <i class="shopping cart icon"></i>
+                        立即购买
+                    </button>
+                </div>
+                
+                <!-- 未登录提示 -->
+                <div th:if="${session.user == null}" class="ui warning message">
+                    <i class="info circle icon"></i>
+                    请先 <a href="/user/login">登录</a> 后购买商品
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <script th:inline="javascript">
+        function buyGoods() {
+            const goodsId = /*[[${goods.goodsId}]]*/ null;
+            if(confirm('确定要购买该商品吗？')) {
+                $.ajax({
+                    url: `/order/create/${goodsId}`,
+                    type: 'POST',
+                    success: function(res) {
+                        if(res.code === 200) {
+                            alert('购买成功!');
+                            window.location.href = '/user/center';
+                        } else {
+                            alert(res.message);
+                        }
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html> 
