@@ -26,12 +26,23 @@
                 ChainMarket
             </a>
             <a href="/market" class="item">商品市场</a>
-            <div class="right menu">
-                <div class="item">
+            <a href="/about" class="item">关于我们</a>
+            
+            <div class="right menu" th:if="${session.user == null}">
+                <a href="/user/login" class="item">登录</a>
+                <a href="/user/register" class="item">注册</a>
+            </div>
+            
+            <div class="right menu" th:if="${session.user != null}">
+                <a href="javascript:void(0)" class="item">
                     <i class="user icon"></i>
-                    <span th:text="${user.username}">用户名</span>
-                </div>
-                <a href="/user/logout" class="item">退出</a>
+                    <span th:text="${session.user.username}">用户名</span>
+                    <span class="ui mini label" th:if="${session.user.roleType == 9}" style="margin-left: 5px;">管理员</span>
+                    <span class="ui mini label" th:if="${session.user.roleType == 1}" style="margin-left: 5px;">普通用户</span>
+                </a>
+                <a href="/user/center" class="item">个人中心</a>
+                <a href="/admin" class="item" th:if="${session.user.roleType == 9}">系统管理</a>
+                <a href="javascript:void(0)" onclick="logout()" class="item">退出</a>
             </div>
         </div>
     </div>
@@ -86,12 +97,12 @@
                             <div class="item">
                                 <i class="id badge icon"></i>
                                 <div class="content">
-                                    <div class="header">角色类型</div>
+                                    <div class="header">用户类型</div>
                                     <div class="description">
-                                        <div class="ui label" th:text="${
-                                            user.roleType == 1 ? '普通用户' :
-                                            user.roleType == 9 ? '管理员' : '未知'
-                                        }">角色</div>
+                                        <div class="ui label" th:classappend="${user.roleType == 9 ? 'red' : 'blue'}">
+                                            <i class="user icon"></i>
+                                            <span th:text="${user.roleType == 9 ? '管理员' : '普通用户'}">普通用户</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -100,6 +111,23 @@
                                 <div class="content">
                                     <div class="header">注册时间</div>
                                     <div class="description" th:text="${#temporals.format(user.createTime, 'yyyy-MM-dd HH:mm:ss')}">注册时间</div>
+                                </div>
+                            </div>
+                            <div class="item">
+                                <i class="star icon"></i>
+                                <div class="content">
+                                    <div class="header">信用分</div>
+                                    <div class="description">
+                                        <div class="ui label" th:classappend="${
+                                            user.creditScore >= 90 ? 'green' :
+                                            user.creditScore >= 70 ? 'blue' :
+                                            user.creditScore >= 50 ? 'yellow' :
+                                            'red'
+                                        }">
+                                            <i class="star icon"></i>
+                                            <span th:text="${user.creditScore}">100</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -140,36 +168,77 @@
                                     <tr>
                                         <th>订单号</th>
                                         <th>商品ID</th>
+                                        <th>卖家ID</th>
                                         <th>金额</th>
                                         <th>状态</th>
-                                        <th>创建时间</th>
-                                        <th>物流单号</th>
+                                        <th>订单信息</th>
                                         <th>操作</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr th:each="order : ${buyOrders}" th:if="${order != null}">
-                                        <td th:text="${order.orderNo}">订单号</td>
+                                        <td th:text="${order.orderId}">订单ID</td>
                                         <td th:text="${order.goodsId}">商品ID</td>
+                                        <td th:text="${order.sellerId}">卖家ID</td>
                                         <td th:text="${order.amount}">金额</td>
-                                        <td th:text="${
-                                            order.status == 1 ? '待发货' :
-                                            order.status == 2 ? '待收货' :
-                                            order.status == 3 ? '已完成' :
-                                            order.status == 4 ? '已取消' : '未知'
-                                        }">状态</td>
-                                        <td th:text="${#temporals.format(order.createTime, 'yyyy-MM-dd HH:mm')}">创建时间</td>
-                                        <td th:text="${order.trackingNo != null ? order.trackingNo : '暂无'}">物流单号</td>
                                         <td>
-                                            <button th:if="${order.status == 2 && order.trackingNo != null}" 
-                                                    class="ui primary tiny button"
-                                                    th:onclick="'receiveOrder(' + ${order.orderId} + ')'">
+                                            <div class="ui label" th:classappend="${
+                                                order.status == 0 ? 'grey' :
+                                                order.status == 1 ? 'blue' :
+                                                order.status == 2 ? 'orange' :
+                                                order.status == 3 ? 'green' :
+                                                order.status == 4 ? 'red' : 'black'
+                                            }">
+                                                <span th:text="${
+                                                    order.status == 0 ? '待支付' :
+                                                    order.status == 1 ? '待发货' :
+                                                    order.status == 2 ? '待收货' :
+                                                    order.status == 3 ? '已完成' :
+                                                    order.status == 4 ? '已取消' : '未知'
+                                                }">状态</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="ui list">
+                                                <div class="item">
+                                                    <i class="hashtag icon"></i>
+                                                    <div class="content">
+                                                        <div class="header">订单编号</div>
+                                                        <div class="description" th:text="${order.orderNo}">订单编号</div>
+                                                    </div>
+                                                </div>
+                                                <div class="item">
+                                                    <i class="truck icon"></i>
+                                                    <div class="content">
+                                                        <div class="header">物流单号</div>
+                                                        <div class="description" th:text="${order.trackingNo != null ? order.trackingNo : '暂无'}">物流单号</div>
+                                                    </div>
+                                                </div>
+                                                <div class="item">
+                                                    <i class="calendar icon"></i>
+                                                    <div class="content">
+                                                        <div class="header">创建时间</div>
+                                                        <div class="description" th:text="${#temporals.format(order.createTime, 'yyyy-MM-dd HH:mm:ss')}">创建时间</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <button th:if="${order.status == 2}" class="ui primary tiny button" th:onclick="'receiveOrder(' + ${order.orderId} + ')'">
                                                 确认收货
                                             </button>
-                                            <button th:if="${order.status == 0}" 
-                                                    class="ui negative tiny button"
-                                                    th:onclick="'cancelOrder(' + ${order.orderId} + ')'">
+                                            <button th:if="${order.status == 0}" class="ui negative tiny button" th:onclick="'cancelOrder(' + ${order.orderId} + ')'">
                                                 取消订单
+                                            </button>
+                                            <button th:if="${order.status == 3 && !reviewService.existsOrderReview(order.orderId)}" 
+                                                    class="ui primary tiny button"
+                                                    th:onclick="'openReviewModal(' + ${order.orderId} + ')'">
+                                                评价
+                                            </button>
+                                            <button th:if="${order.status == 3 && reviewService.existsOrderReview(order.orderId)}" 
+                                                    class="ui basic tiny button"
+                                                    th:onclick="'viewReview(' + ${order.orderId} + ')'">
+                                                查看评价
                                             </button>
                                         </td>
                                     </tr>
@@ -184,31 +253,97 @@
                                     <tr>
                                         <th>订单号</th>
                                         <th>商品ID</th>
+                                        <th>买家ID</th>
                                         <th>金额</th>
                                         <th>状态</th>
-                                        <th>创建时间</th>
-                                        <th>物流单号</th>
+                                        <th>订单信息</th>
+                                        <th>买家评价</th>
                                         <th>操作</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr th:each="order : ${sellOrders}" th:if="${order != null}">
-                                        <td th:text="${order.orderNo}">订单号</td>
+                                        <td th:text="${order.orderId}">订单ID</td>
                                         <td th:text="${order.goodsId}">商品ID</td>
+                                        <td th:text="${order.buyerId}">买家ID</td>
                                         <td th:text="${order.amount}">金额</td>
-                                        <td th:text="${
-                                            order.status == 1 ? '待发货' :
-                                            order.status == 2 ? '待收货' :
-                                            order.status == 3 ? '已完成' :
-                                            order.status == 4 ? '已取消' : '未知'
-                                        }">状态</td>
-                                        <td th:text="${#temporals.format(order.createTime, 'yyyy-MM-dd HH:mm')}">创建时间</td>
-                                        <td th:text="${order.trackingNo != null ? order.trackingNo : '暂无'}">物流单号</td>
                                         <td>
-                                            <button th:if="${order.status == 1}" 
-                                                    class="ui primary tiny button"
-                                                    th:onclick="'shipOrder(' + ${order.orderId} + ')'">
+                                            <div class="ui label" th:classappend="${
+                                                order.status == 0 ? 'grey' :
+                                                order.status == 1 ? 'blue' :
+                                                order.status == 2 ? 'orange' :
+                                                order.status == 3 ? 'green' :
+                                                order.status == 4 ? 'red' : 'black'
+                                            }">
+                                                <span th:text="${
+                                                    order.status == 0 ? '待支付' :
+                                                    order.status == 1 ? '待发货' :
+                                                    order.status == 2 ? '待收货' :
+                                                    order.status == 3 ? '已完成' :
+                                                    order.status == 4 ? '已取消' : '未知'
+                                                }">状态</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="ui list">
+                                                <div class="item">
+                                                    <i class="hashtag icon"></i>
+                                                    <div class="content">
+                                                        <div class="header">订单编号</div>
+                                                        <div class="description" th:text="${order.orderNo}">订单编号</div>
+                                                    </div>
+                                                </div>
+                                                <div class="item">
+                                                    <i class="truck icon"></i>
+                                                    <div class="content">
+                                                        <div class="header">物流单号</div>
+                                                        <div class="description" th:text="${order.trackingNo != null ? order.trackingNo : '暂无'}">物流单号</div>
+                                                    </div>
+                                                </div>
+                                                <div class="item">
+                                                    <i class="calendar icon"></i>
+                                                    <div class="content">
+                                                        <div class="header">创建时间</div>
+                                                        <div class="description" th:text="${#temporals.format(order.createTime, 'yyyy-MM-dd HH:mm:ss')}">创建时间</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        
+                                        <!-- 买家评价列 -->
+                                        <td>
+                                            <div th:if="${order.status == 3 && reviewService.existsOrderReview(order.orderId)}">
+                                                <div class="ui mini horizontal divided list">
+                                                    <div class="item">
+                                                        <div class="content">
+                                                            <div class="description">
+                                                                <div class="ui star rating" data-rating="0" data-max-rating="5" th:data-rating="${reviewService.getOrderReview(order.orderId).score}" data-read-only="true"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="item">
+                                                        <div class="content">
+                                                            <div class="description">
+                                                                <a href="javascript:void(0)" th:onclick="'viewReview(' + ${order.orderId} + ')'">查看评价</a>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div th:if="${order.status == 3 && !reviewService.existsOrderReview(order.orderId)}">
+                                                <span class="ui grey text">未评价</span>
+                                            </div>
+                                            <div th:if="${order.status != 3}">
+                                                <span class="ui grey text">待完成</span>
+                                            </div>
+                                        </td>
+                                        
+                                        <td>
+                                            <button th:if="${order.status == 1}" class="ui primary tiny button" th:onclick="'shipOrder(' + ${order.orderId} + ')'">
                                                 发货
+                                            </button>
+                                            <button th:if="${order.status == 0}" class="ui negative tiny button" th:onclick="'cancelOrder(' + ${order.orderId} + ')'">
+                                                取消订单
                                             </button>
                                         </td>
                                     </tr>
@@ -221,10 +356,69 @@
         </div>
     </div>
 
+    <!-- 添加评价模态框 -->
+    <div class="ui modal" id="reviewModal">
+        <div class="header">订单评价</div>
+        <div class="content">
+            <form class="ui form">
+                <input type="hidden" id="reviewOrderId">
+                <div class="field">
+                    <label>评分</label>
+                    <div class="ui star rating" data-max-rating="5"></div>
+                    <input type="hidden" id="reviewScore">
+                </div>
+                <div class="field">
+                    <label>评价内容</label>
+                    <textarea id="reviewContent" rows="3" placeholder="请输入评价内容"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">取消</div>
+            <div class="ui primary button" onclick="submitReview()">提交</div>
+        </div>
+    </div>
+
+    <!-- 查看评价模态框 -->
+    <div class="ui modal" id="viewReviewModal">
+        <div class="header">订单评价详情</div>
+        <div class="content">
+            <div class="ui list">
+                <div class="item">
+                    <div class="header">评分</div>
+                    <div class="description" id="viewReviewScore"></div>
+                </div>
+                <div class="item">
+                    <div class="header">评价内容</div>
+                    <div class="description" id="viewReviewContent"></div>
+                </div>
+                <div class="item">
+                    <div class="header">评价时间</div>
+                    <div class="description" id="viewReviewTime"></div>
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <div class="ui cancel button">关闭</div>
+        </div>
+    </div>
+
+    <!-- 页面底部添加退出登录脚本 -->
+    <script th:replace="fragments/navbar :: logout-script"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
     <script>
-        $('.menu .item').tab();
+        $(document).ready(function() {
+            // 初始化标签页
+            $('.menu .item').tab();
+            
+            // 初始化所有评分组件
+            $('.ui.rating').rating();
+            
+            // 设置只读评分组件
+            $('.ui.rating[data-read-only="true"]').rating('disable');
+        });
         
         function confirmOrder(orderId) {
             if(confirm('确认已收到商品?')) {
@@ -276,6 +470,84 @@
                     }
                 });
             }
+        }
+
+        // 打开评价模态框
+        function openReviewModal(orderId) {
+            $('#reviewOrderId').val(orderId);
+            $('#reviewScore').val(5);  // 默认5分
+            $('#reviewContent').val('');
+            $('.ui.rating').rating('set rating', 5);
+            $('#reviewModal').modal('show');
+        }
+        
+        // 提交评价
+        function submitReview() {
+            const data = {
+                orderId: $('#reviewOrderId').val(),
+                score: $('#reviewScore').val(),
+                content: $('#reviewContent').val()
+            };
+            
+            if (!data.score) {
+                alert('请选择评分');
+                return;
+            }
+            
+            $.ajax({
+                url: '/review/submit',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if (res.code === 200) {
+                        alert('评价成功');
+                        $('#reviewModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+        
+        // 查看评价
+        function viewReview(orderId) {
+            $.get('/review/order/' + orderId, function(res) {
+                if (res.code === 200 && res.data) {
+                    const review = res.data;
+                    
+                    // 清空并重新设置评分星星
+                    $('#viewReviewScore').empty();
+                    for (let i = 0; i < review.score; i++) {
+                        $('#viewReviewScore').append('<i class="yellow star icon"></i>');
+                    }
+                    
+                    // 设置评价内容和时间
+                    $('#viewReviewContent').text(review.content || '无评价内容');
+                    $('#viewReviewTime').text(formatDateTime(review.createTime));
+                    
+                    // 显示模态框
+                    $('#viewReviewModal').modal('show');
+                } else {
+                    alert('获取评价失败: ' + (res.message || '未知错误'));
+                }
+            }).fail(function(xhr, status, error) {
+                console.error('请求失败:', error);
+                alert('获取评价失败，请稍后再试');
+            });
+        }
+
+        // 格式化日期时间
+        function formatDateTime(dateTimeStr) {
+            if (!dateTimeStr) return '未知时间';
+            const date = new Date(dateTimeStr);
+            return date.getFullYear() + '-' + 
+                   String(date.getMonth() + 1).padStart(2, '0') + '-' +
+                   String(date.getDate()).padStart(2, '0') + ' ' +
+                   String(date.getHours()).padStart(2, '0') + ':' +
+                   String(date.getMinutes()).padStart(2, '0') + ':' +
+                   String(date.getSeconds()).padStart(2, '0');
         }
     </script>
 </body>

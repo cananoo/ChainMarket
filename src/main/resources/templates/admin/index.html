@@ -121,6 +121,7 @@
                                 <th>手机号</th>
                                 <th>角色</th>
                                 <th>状态</th>
+                                <th>信用分</th>
                                 <th>注册时间</th>
                                 <th>操作</th>
                             </tr>
@@ -324,6 +325,12 @@
                         <td>${user.phone}</td>
                         <td>${getRoleType(user.roleType)}</td>
                         <td>${getUserStatus(user.status)}</td>
+                        <td>
+                            <div class="ui label ${getCreditScoreClass(user.creditScore)}">
+                                <i class="star icon"></i>
+                                ${user.creditScore}
+                            </div>
+                        </td>
                         <td>${formatDateTime(user.createTime)}</td>
                         <td>
                             ${user.status === 1 ? 
@@ -337,6 +344,13 @@
                 `;
             });
             $('#userList').html(html);
+        }
+        
+        function getCreditScoreClass(score) {
+            if (score >= 90) return 'green';
+            if (score >= 70) return 'blue';
+            if (score >= 50) return 'yellow';
+            return 'red';
         }
         
         // 格式化日期时间

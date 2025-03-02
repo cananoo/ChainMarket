@@ -117,6 +117,24 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="item">
+                            <i class="user icon"></i>
+                            <div class="content">
+                                <div class="header">卖家</div>
+                                <div class="description">
+                                    <span th:text="${seller.username}">卖家名称</span>
+                                    <div class="ui label" th:classappend="${
+                                        seller.creditScore >= 90 ? 'green' :
+                                        seller.creditScore >= 70 ? 'blue' :
+                                        seller.creditScore >= 50 ? 'yellow' :
+                                        'red'
+                                    }">
+                                        <i class="star icon"></i>
+                                        <span th:text="${seller.creditScore}">100</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 

@@ -20,11 +20,11 @@ CREATE TABLE user_info (
     walletAddress VARCHAR(42) COMMENT '区块链钱包地址',
     createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
     updateTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    creditScore INT NOT NULL DEFAULT 100 COMMENT '用户信用分(0-100)'，
     INDEX idx_phone(phone),
     INDEX idx_status(status),
     INDEX idx_wallet(walletAddress)
 ) COMMENT '用户信息表';
-
 
 
 -- 2. 统一审核表

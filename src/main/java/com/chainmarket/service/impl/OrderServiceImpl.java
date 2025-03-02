@@ -287,5 +287,8 @@ public class OrderServiceImpl implements IOrderService {
         goods.setSellerId(order.getBuyerId());
         goods.setStatus(1);  // 设置为已上架状态，无需再审核
         goodsDao.updateById(goods);
+        
+        // 返回提示信息，提醒用户评价
+        throw new BusinessException(200, "收货成功，请对本次交易进行评价");
     }
 } 

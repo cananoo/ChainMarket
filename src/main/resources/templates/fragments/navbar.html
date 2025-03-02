@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- 导航栏片段 -->
+    <div th:fragment="navbar" class="ui fixed inverted menu">
+        <div class="ui container">
+            <a href="/" class="header item">
+                <i class="chain icon"></i>
+                ChainMarket
+            </a>
+            <a href="/market" class="item">商品市场</a>
+            <a href="/about" class="item">关于我们</a>
+            
+            <div class="right menu" th:if="${session.user == null}">
+                <a href="/user/login" class="item">登录</a>
+                <a href="/user/register" class="item">注册</a>
+            </div>
+            
+            <div class="right menu" th:if="${session.user != null}">
+                <a href="javascript:void(0)" class="item">
+                    <i class="user icon"></i>
+                    <span th:text="${session.user.username}">用户名</span>
+                    <span class="ui mini label" th:if="${session.user.roleType == 9}" style="margin-left: 5px;">管理员</span>
+                    <span class="ui mini label" th:if="${session.user.roleType == 1}" style="margin-left: 5px;">普通用户</span>
+                </a>
+                <a href="/user/center" class="item">个人中心</a>
+                <a href="/admin" class="item" th:if="${session.user.roleType == 9}">系统管理</a>
+                <a href="javascript:void(0)" onclick="logout()" class="item">退出</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 退出登录的JavaScript函数 -->
+    <script th:fragment="logout-script">
+        function logout() {
+            if(confirm('确定要退出登录吗？')) {
+                $.post('/user/logout', function(res) {
+                    if(res.code === 200) {
+                        window.location.href = '/';
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            }
+        }
+    </script>
+</body>
+</html>

@@ -111,4 +111,13 @@ public class UserServiceImpl implements IUserService {
         
         return user;
     }
+
+    @Override
+    public User getUserById(Long userId) {
+        User user = userDao.selectById(userId);
+        if (user == null) {
+            throw new BusinessException("用户不存在");
+        }
+        return user;
+    }
 } 

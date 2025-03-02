@@ -5,6 +5,7 @@ import com.chainmarket.entity.Goods;
 import com.chainmarket.entity.User;
 import com.chainmarket.service.IGoodsService;
 import com.chainmarket.service.IImageService;
+import com.chainmarket.service.IUserService;
 import com.chainmarket.common.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -22,6 +23,9 @@ public class GoodsController {
     
     @Autowired
     private IImageService imageService;
+    
+    @Autowired
+    private IUserService userService;
     
     @GetMapping("/upload")
     public String uploadPage() {
@@ -97,6 +101,11 @@ public class GoodsController {
         // 获取商品详情
         Goods goods = goodsService.getGoodsDetail(id);
         model.addAttribute("goods", goods);
+        
+        // 获取卖家信息
+        User seller = userService.getUserById(goods.getSellerId());
+        model.addAttribute("seller", seller);
+        
         return "goods/detail";
     }
 } 

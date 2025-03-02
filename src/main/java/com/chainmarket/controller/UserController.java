@@ -4,6 +4,7 @@ import com.chainmarket.entity.User;
 import com.chainmarket.entity.Order;
 import com.chainmarket.service.IOrderService;
 import com.chainmarket.service.impl.UserServiceImpl;
+import com.chainmarket.service.IReviewService;
 import com.chainmarket.common.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -22,6 +23,9 @@ public class UserController {
 
     @Autowired
     private IOrderService orderService;
+
+    @Autowired
+    private IReviewService reviewService;
 
     /**
      * 跳转到注册页面
@@ -91,6 +95,7 @@ public class UserController {
         List<Order> sellOrders = orderService.getSellerOrders(user.getUserId());
         model.addAttribute("buyOrders", buyOrders);
         model.addAttribute("sellOrders", sellOrders);
+        model.addAttribute("reviewService", reviewService);
         
         return "user/center";
     }

@@ -130,23 +130,27 @@
     <div class="ui fixed inverted menu">
         <div class="ui container">
             <a href="/" class="header item">
-                <i class="shopping bag icon"></i>
+                <i class="chain icon"></i>
                 ChainMarket
             </a>
-            <a href="/market" class="item">市场</a>
+            <a href="/market" class="item">商品市场</a>
+            <a href="/about" class="item">关于我们</a>
             
-            <div class="right menu">
-                <a href="/user/login" class="item" th:if="${session.user == null}">登录</a>
-                <a href="/user/register" class="item" th:if="${session.user == null}">注册</a>
-                <div class="ui dropdown item" th:if="${session.user != null}">
+            <div class="right menu" th:if="${session.user == null}">
+                <a href="/user/login" class="item">登录</a>
+                <a href="/user/register" class="item">注册</a>
+            </div>
+            
+            <div class="right menu" th:if="${session.user != null}">
+                <a href="javascript:void(0)" class="item">
+                    <i class="user icon"></i>
                     <span th:text="${session.user.username}">用户名</span>
-                    <i class="dropdown icon"></i>
-                    <div class="menu">
-                        <a href="/user/center" class="item">个人中心</a>
-                        <a href="/goods/upload" class="item">发布商品</a>
-                        <a href="/user/logout" class="item">退出登录</a>
-                    </div>
-                </div>
+                    <span class="ui mini label" th:if="${session.user.roleType == 9}" style="margin-left: 5px;">管理员</span>
+                    <span class="ui mini label" th:if="${session.user.roleType == 1}" style="margin-left: 5px;">普通用户</span>
+                </a>
+                <a href="/user/center" class="item">个人中心</a>
+                <a href="/admin" class="item" th:if="${session.user.roleType == 9}">系统管理</a>
+                <a href="javascript:void(0)" onclick="logout()" class="item">退出</a>
             </div>
         </div>
     </div>
@@ -249,7 +253,7 @@
             <div class="ui inverted divided grid">
                 <div class="sixteen wide column">
                     <h4 class="ui inverted header">ChainMarket</h4>
-                    <p>© 2023 ChainMarket. 保留所有权利。</p>
+                    <p>© 2025 ChainMarket. 保留所有权利。</p>
                     <p>基于区块链技术的二手交易平台，为您提供安全、透明的交易环境。</p>
                 </div>
             </div>

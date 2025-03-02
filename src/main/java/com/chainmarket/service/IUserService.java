@@ -28,4 +28,11 @@ public interface IUserService {
      * @return 用户信息
      */
     User login(LoginDTO loginDTO);
+    
+    /**
+     * 根据用户ID获取用户信息
+     * @param userId 用户ID
+     * @return 用户信息
+     */
+    User getUserById(Long userId);
 } 

@@ -26,6 +26,9 @@ public class User {
     @TableField("walletAddress")
     private String walletAddress;  // 用户钱包地址
     
+    @TableField("creditScore")
+    private Integer creditScore;   // 用户信用分(0-100)
+    
     @TableField(value = "createTime", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
     
