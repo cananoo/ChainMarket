@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>仲裁中心 - ChainMarket</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <style>
+        .main.container {
+            margin-top: 7em;
+            margin-bottom: 3em;
+        }
+        .arbitration-card {
+            margin-bottom: 1em !important;
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <div class="ui main container">
+        <h2 class="ui header">
+            <i class="balance scale icon"></i>
+            <div class="content">
+                仲裁中心
+                <div class="sub header">处理交易纠纷，维护交易秩序</div>
+            </div>
+        </h2>
+        
+        <!-- 添加仲裁规则说明 -->
+        <div class="ui info message">
+            <div class="header">仲裁规则说明</div>
+            <ul class="list">
+                <li>每个仲裁案件需要 <strong th:text="${arbitratorCount}">3</strong> 名仲裁员参与</li>
+                <li>需要至少 <strong th:text="${requiredVotes}">2</strong> 票同意才能通过仲裁决议</li>
+                <li>仲裁员需要在规定时间内完成投票，超时视为弃权</li>
+            </ul>
+        </div>
+        
+        <!-- 仲裁案件列表 -->
+        <div class="ui segment">
+            <h3 class="ui dividing header">待处理的仲裁案件</h3>
+            
+            <div class="ui cards">
+                <div class="ui fluid card arbitration-card" th:each="case : ${arbitrationCases}">
+                    <div class="content">
+                        <div class="header">
+                            <i class="gavel icon"></i>
+                            仲裁案件 #<span th:text="${case.caseNo}"></span>
+                        </div>
+                        <div class="meta">
+                            <span th:text="${#temporals.format(case.createTime, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                            <span class="right floated">
+                                已有 <strong th:text="${case.arbitratorCount}">0</strong>/<strong th:text="${arbitratorCount}">3</strong> 名仲裁员参与
+                            </span>
+                        </div>
+                        <div class="description">
+                            <p th:text="${case.disputeDesc}"></p>
+                        </div>
+                    </div>
+                    <div class="extra content">
+                        <button class="ui primary button" th:onclick="'joinArbitration(' + ${case.caseId} + ')'"
+                                th:disabled="${case.arbitratorCount >= arbitratorCount}">
+                            <i class="handshake icon"></i>
+                            参与仲裁
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 无数据提示 -->
+            <div class="ui placeholder segment" th:if="${#lists.isEmpty(arbitrationCases)}">
+                <div class="ui icon header">
+                    <i class="check circle icon"></i>
+                    暂无待处理的仲裁案件
+                </div>
+            </div>
+        </div>
+
+        <!-- 在仲裁案件列表后添加我的订单部分 -->
+        <div class="ui segment">
+            <h3 class="ui dividing header">我的订单</h3>
+            
+            <table class="ui celled table">
+                <thead>
+                    <tr>
+                        <th>订单号</th>
+                        <th>商品名称</th>
+                        <th>交易金额</th>
+                        <th>订单状态</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="order : ${myOrders}">
+                        <td th:text="${order.orderNo}"></td>
+                        <td th:text="${order.goodsName}"></td>
+                        <td th:text="'￥' + ${order.amount}"></td>
+                        <td th:text="${order.statusText}"></td>
+                        <td>
+                            <button class="ui primary button" 
+                                    th:onclick="'openArbitrationModal(\'' + ${order.orderId} + '\')'"
+                                    th:disabled="${order.status == 4}">申请仲裁</button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 申请仲裁的模态框 -->
+        <div class="ui modal" id="arbitrationModal">
+            <i class="close icon"></i>
+            <div class="header">
+                申请仲裁
+            </div>
+            <div class="content">
+                <form class="ui form" id="arbitrationForm">
+                    <input type="hidden" id="orderId" name="orderId">
+                    <div class="field">
+                        <label>争议描述</label>
+                        <textarea name="disputeDesc" rows="3" required></textarea>
+                    </div>
+                    <div class="field">
+                        <label>上传证据</label>
+                        <input type="file" name="evidenceFile" accept="image/*,.pdf" required>
+                    </div>
+                    <div class="field">
+                        <label>证据说明</label>
+                        <textarea name="evidenceDesc" rows="2" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="actions">
+                <div class="ui black deny button">
+                    取消
+                </div>
+                <div class="ui positive right labeled icon button" onclick="submitArbitration()">
+                    提交
+                    <i class="checkmark icon"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <script th:replace="fragments/navbar :: logout-script"></script>
+    <script>
+        function joinArbitration(caseId) {
+            if(confirm('确定要参与该仲裁案件吗？')) {
+                $.post('/arbitration/join/' + caseId, function(res) {
+                    if(res.code === 200) {
+                        // 跳转到案件详情页
+                        window.location.href = '/arbitration/detail/' + caseId;
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            }
+        }
+
+        function openArbitrationModal(orderId) {
+            $('#orderId').val(orderId);
+            $('#arbitrationModal').modal('show');
+        }
+
+        function submitArbitration() {
+            const formData = new FormData($('#arbitrationForm')[0]);
+            
+            $.ajax({
+                url: '/arbitration/apply',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(res) {
+                    if(res.code === 200) {
+                        alert('申请成功');
+                        location.reload();
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

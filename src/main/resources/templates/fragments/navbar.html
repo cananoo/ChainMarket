@@ -12,6 +12,10 @@
                 ChainMarket
             </a>
             <a href="/market" class="item">商品市场</a>
+            <a href="/arbitration" class="item" th:if="${session.user != null && session.user.roleType == 1}">
+                <i class="balance scale icon"></i>
+                仲裁中心
+            </a>
             <a href="/about" class="item">关于我们</a>
             
             <div class="right menu" th:if="${session.user == null}">

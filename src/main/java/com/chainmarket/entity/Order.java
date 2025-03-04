@@ -19,6 +19,10 @@ public class Order {
     @TableField("goodsId")
     private Long goodsId;
     
+    // 商品名称（非数据库字段）
+    @TableField(exist = false)
+    private String goodsName;
+    
     @TableField("buyerId")
     private Long buyerId;
     
@@ -27,7 +31,7 @@ public class Order {
     
     private BigDecimal amount;
     
-    private Integer status;  // 1-待发货 2-待收货 3-已完成 4-已取消
+    private Integer status;  // 0-待支付 1-待确认 2-已完成 3-已取消 4-退款中 5-已退款
     
     @TableField("trackingNo")
     private String trackingNo;
@@ -46,6 +50,10 @@ public class Order {
     
     @TableField("receiveTime")
     private LocalDateTime receiveTime;
+    
+    // 订单状态文本（非数据库字段）
+    @TableField(exist = false)
+    private String statusText;
     
     /**
      * 生成物流单号
@@ -69,5 +77,24 @@ public class Order {
      */
     public boolean canReceive() {
         return status != null && status == 2; // 状态2表示待收货
+    }
+    
+    // 获取状态文本
+    public String getStatusText() {
+        if (status == null) return "未知状态";
+        switch (status) {
+            case 0: return "待支付";
+            case 1: return "待确认";
+            case 2: return "已完成";
+            case 3: return "已取消";
+            case 4: return "退款中";
+            case 5: return "已退款";
+            default: return "未知状态";
+        }
+    }
+    
+    // 设置状态文本
+    public void setStatusText(String statusText) {
+        this.statusText = statusText;
     }
 } 

@@ -132,33 +132,19 @@
                 
                 <!-- 系统参数 -->
                 <div class="ui tab segment" data-tab="params">
-                    <div class="ui form">
-                        <h4 class="ui dividing header">交易参数</h4>
+                    <h3 class="ui dividing header">系统参数设置</h3>
+                    <form class="ui form">
                         <div class="field">
-                            <label>支付超时时间（分钟）</label>
-                            <input type="number" id="payTimeout" min="1" max="1440">
-                        </div>
-                        <div class="field">
-                            <label>订单自动确认时间（天）</label>
-                            <input type="number" id="autoConfirmDays" min="1" max="15">
-                        </div>
-                        
-                        <h4 class="ui dividing header">仲裁参数</h4>
-                        <div class="field">
-                            <label>仲裁员最少人数</label>
-                            <input type="number" id="minArbitrators" min="3" max="11">
-                        </div>
-                        <div class="field">
-                            <label>仲裁投票时限（小时）</label>
-                            <input type="number" id="voteTimeout" min="1" max="72">
-                        </div>
-                        <div class="field">
-                            <label>仲裁奖励比例（%）</label>
-                            <input type="number" id="rewardRate" min="0" max="100">
+                            <label>仲裁员数量</label>
+                            <input type="number" id="arbitratorCount" min="1" max="10" placeholder="每个仲裁案件需要的仲裁员数量">
+                            <div class="ui pointing label">
+                                设置每个仲裁案件需要的仲裁员数量，建议设置3-5人
+                            </div>
                         </div>
                         
-                        <button class="ui primary button" onclick="saveParams()">保存设置</button>
-                    </div>
+                        <div class="ui divider"></div>
+                        <button type="button" class="ui primary button" onclick="saveParams()">保存设置</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -375,28 +361,18 @@
             }
         }
         
-        // 加载系统参数
-        function loadParams() {
-            $.get('/admin/params', function(res) {
-                if(res.code === 200) {
-                    const params = res.data;
-                    $('#payTimeout').val(params.payTimeout);
-                    $('#autoConfirmDays').val(params.autoConfirmDays);
-                    $('#minArbitrators').val(params.minArbitrators);
-                    $('#voteTimeout').val(params.voteTimeout);
-                    $('#rewardRate').val(params.rewardRate);
-                }
-            });
-        }
-        
         // 保存系统参数
         function saveParams() {
+            const arbitratorCount = $('#arbitratorCount').val();
+            
+            // 参数验证
+            if (!arbitratorCount || arbitratorCount < 1 || arbitratorCount > 10) {
+                alert('请输入1-10之间的仲裁员数量');
+                return;
+            }
+            
             const data = {
-                payTimeout: $('#payTimeout').val(),
-                autoConfirmDays: $('#autoConfirmDays').val(),
-                minArbitrators: $('#minArbitrators').val(),
-                voteTimeout: $('#voteTimeout').val(),
-                rewardRate: $('#rewardRate').val()
+                arbitrator_count: arbitratorCount
             };
             
             $.ajax({
@@ -405,12 +381,30 @@
                 contentType: 'application/json',
                 data: JSON.stringify(data),
                 success: function(res) {
-                    if(res.code === 200) {
+                    if (res.code === 200) {
                         alert('保存成功');
+                        loadParams(); // 重新加载参数
                     } else {
-                        alert(res.message);
+                        alert(res.message || '保存失败');
                     }
+                },
+                error: function(xhr, status, error) {
+                    alert('保存失败：' + (error || '未知错误'));
                 }
+            });
+        }
+        
+        // 加载系统参数
+        function loadParams() {
+            $.get('/admin/params', function(res) {
+                if (res.code === 200 && res.data) {
+                    const params = res.data;
+                    $('#arbitratorCount').val(params.arbitrator_count || 3);
+                } else {
+                    console.error('加载系统参数失败:', res);
+                }
+            }).fail(function(xhr, status, error) {
+                console.error('加载系统参数失败:', error);
             });
         }
         

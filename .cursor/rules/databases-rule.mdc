@@ -148,13 +148,9 @@ CREATE TABLE arbitration_evidence (
     caseId BIGINT NOT NULL COMMENT '案件ID',
     userId BIGINT NOT NULL COMMENT '上传用户ID',
     evidenceUrl VARCHAR(255) NOT NULL COMMENT '证据文件URL',
-    evidenceHash VARCHAR(64) NOT NULL COMMENT '证据文件哈希',
-    evidenceType TINYINT NOT NULL COMMENT '证据类型',
     description TEXT COMMENT '证据说明',
-    txHash VARCHAR(66) COMMENT '区块链交易哈希',
     createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
     INDEX idx_case(caseId),
-    INDEX idx_hash(txHash),
     FOREIGN KEY (caseId) REFERENCES arbitration_case(caseId),
     FOREIGN KEY (userId) REFERENCES user_info(userId)
 ) COMMENT '仲裁证据表';

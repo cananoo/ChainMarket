@@ -5,6 +5,7 @@ import com.chainmarket.entity.Order;
 import org.apache.ibatis.annotations.Mapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import java.util.List;
+import org.apache.ibatis.annotations.Select;
 
 @Mapper
 public interface OrderDao extends BaseMapper<Order> {
@@ -35,4 +36,11 @@ public interface OrderDao extends BaseMapper<Order> {
                 .eq("goodsId", goodsId)
                 .in("status", 0, 1)); // 待支付或待确认状态
     }
+
+    @Select("SELECT o.*, g.goodsName " +
+            "FROM order_info o " +
+            "LEFT JOIN goods_info g ON o.goodsId = g.goodsId " +
+            "WHERE o.buyerId = #{userId} " +
+            "ORDER BY o.createTime DESC")
+    List<Order> selectUserBuyOrders(Long userId);
 } 

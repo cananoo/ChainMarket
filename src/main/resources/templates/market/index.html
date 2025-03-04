@@ -39,41 +39,8 @@
     </style>
 </head>
 <body>
-    <!-- 导航栏 -->
-    <div class="ui fixed inverted menu">
-        <div class="ui container">
-            <a href="/" class="header item">
-                <i class="chain icon"></i>
-                ChainMarket
-            </a>
-            <a href="/market" class="active item">商品市场</a>
-            <th:block th:if="${session.user != null && session.user.roleType == 9}">
-                <a href="/admin" class="item">
-                    <i class="cogs icon"></i>
-                    系统管理
-                </a>
-            </th:block>
-            <a href="/about" class="item">关于我们</a>
-            <div class="right menu">
-                <th:block th:if="${session.user != null}">
-                    <div class="item">
-                        <i class="user icon"></i>
-                        <span th:text="${session.user.username}">用户名</span>
-                        <span class="ui label" th:text="${
-                            session.user.roleType == 1 ? '普通用户' :
-                            session.user.roleType == 9 ? '管理员' : '未知'
-                        }">角色</span>
-                    </div>
-                    <a href="/user/center" class="item">个人中心</a>
-                    <a href="/user/logout" class="item">退出</a>
-                </th:block>
-                <th:block th:if="${session.user == null}">
-                    <a href="/user/register" class="item">注册</a>
-                    <a href="/user/login" class="item">登录</a>
-                </th:block>
-            </div>
-        </div>
-    </div>
+    <!-- 替换原有导航栏 -->
+    <div th:replace="fragments/navbar :: navbar"></div>
 
     <div class="ui main container">
         <!-- 卖家功能区 -->

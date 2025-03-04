@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>仲裁案件详情 - ChainMarket</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <style>
+        .main.container {
+            margin-top: 7em;
+            margin-bottom: 3em;
+        }
+        /* 添加证据图片样式 */
+        .evidence-image {
+            max-width: 300px !important;  /* 限制最大宽度 */
+            height: auto !important;      /* 保持宽高比 */
+            margin: 1em 0;               /* 添加上下间距 */
+        }
+    </style>
+</head>
+<body>
+    <div th:replace="fragments/navbar :: navbar"></div>
+
+    <div class="ui main container">
+        <h2 class="ui header">
+            <i class="gavel icon"></i>
+            <div class="content">
+                仲裁案件详情
+                <div class="sub header">案件编号：#<span th:text="${arbitration.caseNo}"></span></div>
+            </div>
+        </h2>
+
+        <div class="ui segment">
+            <div class="ui list">
+                <div class="item">
+                    <i class="calendar icon"></i>
+                    <div class="content">
+                        <div class="header">申请时间</div>
+                        <div class="description" th:text="${#temporals.format(arbitration.createTime, 'yyyy-MM-dd HH:mm:ss')}"></div>
+                    </div>
+                </div>
+                <div class="item">
+                    <i class="file text icon"></i>
+                    <div class="content">
+                        <div class="header">争议描述</div>
+                        <div class="description" th:text="${arbitration.disputeDesc}"></div>
+                    </div>
+                </div>
+                <div class="item">
+                    <i class="info circle icon"></i>
+                    <div class="content">
+                        <div class="header">状态</div>
+                        <div class="description" th:text="${
+                            arbitration.status == 0 ? '待处理' :
+                            arbitration.status == 1 ? '处理中' :
+                            arbitration.status == 2 ? '已完成' : '未知'
+                        }"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="ui segment">
+            <h3 class="ui dividing header">证据信息</h3>
+            <div class="ui items">
+                <div class="item" th:each="evidence : ${evidences}">
+                    <div class="content">
+                        <div class="meta">
+                            <span th:text="${#temporals.format(evidence.createTime, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                        </div>
+                        <div class="description">
+                            <p th:text="${evidence.description}"></p>
+                        </div>
+                        <div class="extra">
+                            <a th:href="${evidence.evidenceUrl}" target="_blank">
+                                <img class="ui bordered image evidence-image" th:src="${evidence.evidenceUrl}">
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="ui placeholder segment" th:if="${#lists.isEmpty(evidences)}">
+                <div class="ui icon header">
+                    <i class="file image outline icon"></i>
+                    暂无证据信息
+                </div>
+            </div>
+        </div>
+
+        <div class="ui segment">
+            <h3 class="ui dividing header">仲裁投票</h3>
+            <div class="ui center aligned container">
+                <p class="ui text">请根据以上信息，做出您的仲裁决定：</p>
+                <div class="ui two buttons" style="max-width: 400px; margin: 1em auto;">
+                    <button class="ui positive button">
+                        <i class="thumbs up icon"></i>
+                        赞成申请人诉求
+                    </button>
+                    <div class="or" data-text="或"></div>
+                    <button class="ui negative button">
+                        <i class="thumbs down icon"></i>
+                        否决申请人诉求
+                    </button>
+                </div>
+                <p class="ui small text" style="margin-top: 1em; color: #666;">
+                    <i class="info circle icon"></i>
+                    注意：投票一旦提交将记录在区块链上，不可更改
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+</body>
+</html> 
