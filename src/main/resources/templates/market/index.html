@@ -39,7 +39,7 @@
     </style>
 </head>
 <body>
-    <!-- 替换原有导航栏 -->
+    <!-- 使用导航栏片段替换原有导航栏 -->
     <div th:replace="fragments/navbar :: navbar"></div>
 
     <div class="ui main container">
@@ -142,6 +142,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <!-- 添加退出脚本引用 -->
+    <script th:replace="fragments/navbar :: logout-script"></script>
+    
     <script>
         function updateGoodsStatus(goodsId, status) {
             if (!confirm('确定要更改商品状态吗？')) return;

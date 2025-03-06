@@ -67,23 +67,9 @@ CREATE TABLE goods_info (
     FOREIGN KEY (sellerId) REFERENCES user_info(userId)
 ) COMMENT '商品信息表';
 
---4.5 商品历史表
 
-CREATE TABLE `goods_history` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '记录ID',
-    `goodsId` bigint NOT NULL COMMENT '商品ID',
-    `userId` bigint NOT NULL COMMENT '历史拥有者ID',
-    `startTime` datetime NOT NULL COMMENT '开始拥有时间',
-    `endTime` datetime NOT NULL COMMENT '结束拥有时间',
-    `txHash` varchar(66) DEFAULT NULL COMMENT '区块链交易哈希',
-    PRIMARY KEY (`id`),
-    KEY `idx_goods` (`goodsId`),
-    KEY `idx_user` (`userId`),
-    FOREIGN KEY (`goodsId`) REFERENCES `goods_info` (`goodsId`),
-    FOREIGN KEY (`userId`) REFERENCES `user_info` (`userId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='商品历史记录表';
 
--- 6. 订单表
+-- 5. 订单表
 CREATE TABLE order_info (
     orderId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '订单ID',
     orderNo VARCHAR(32) NOT NULL UNIQUE COMMENT '订单编号',
@@ -107,7 +93,7 @@ CREATE TABLE order_info (
     FOREIGN KEY (sellerId) REFERENCES user_info(userId)
 ) COMMENT '订单信息表';
 
--- 7. 订单评价表
+-- 6. 订单评价表
 CREATE TABLE order_review (
     reviewId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '评价ID',
     orderId BIGINT NOT NULL COMMENT '订单ID',
@@ -123,7 +109,7 @@ CREATE TABLE order_review (
     FOREIGN KEY (buyerId) REFERENCES user_info(userId)
 ) COMMENT '订单评价表';
 
--- 8. 仲裁案件表
+-- 7. 仲裁案件表
 CREATE TABLE arbitration_case (
     caseId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '案件ID',
     caseNo VARCHAR(32) NOT NULL UNIQUE COMMENT '案件编号',
@@ -142,7 +128,7 @@ CREATE TABLE arbitration_case (
     FOREIGN KEY (initiatorId) REFERENCES user_info(userId)
 ) COMMENT '仲裁案件表';
 
--- 9. 仲裁证据表
+-- 8. 仲裁证据表
 CREATE TABLE arbitration_evidence (
     evidenceId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '证据ID',
     caseId BIGINT NOT NULL COMMENT '案件ID',
@@ -155,40 +141,10 @@ CREATE TABLE arbitration_evidence (
     FOREIGN KEY (userId) REFERENCES user_info(userId)
 ) COMMENT '仲裁证据表';
 
--- 10. 仲裁投票表
-CREATE TABLE arbitration_vote (
-    voteId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '投票ID',
-    caseId BIGINT NOT NULL COMMENT '案件ID',
-    arbitratorId BIGINT NOT NULL COMMENT '仲裁员ID',
-    voteResult TINYINT NOT NULL COMMENT '投票结果(1-支持 2-反对)',
-    voteDesc TEXT COMMENT '投票说明',
-    txHash VARCHAR(66) COMMENT '区块链交易哈希',
-    createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '投票时间',
-    INDEX idx_case(caseId),
-    INDEX idx_arbitrator(arbitratorId),
-    INDEX idx_hash(txHash),
-    FOREIGN KEY (caseId) REFERENCES arbitration_case(caseId),
-    FOREIGN KEY (arbitratorId) REFERENCES user_info(userId)
-) COMMENT '仲裁投票表';
 
--- 11. 仲裁奖励表
-CREATE TABLE arbitration_reward (
-    rewardId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '奖励ID',
-    caseId BIGINT NOT NULL COMMENT '案件ID',
-    arbitratorId BIGINT NOT NULL COMMENT '仲裁员ID',
-    points INT NOT NULL COMMENT '奖励积分',
-    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态(0-待领取 1-已领取)',
-    txHash VARCHAR(66) COMMENT '区块链交易哈希',
-    createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    receiveTime DATETIME COMMENT '领取时间',
-    INDEX idx_case(caseId),
-    INDEX idx_arbitrator(arbitratorId),
-    INDEX idx_hash(txHash),
-    FOREIGN KEY (caseId) REFERENCES arbitration_case(caseId),
-    FOREIGN KEY (arbitratorId) REFERENCES user_info(userId)
-) COMMENT '仲裁奖励表';
 
--- 12. 系统参数表
+
+-- 9. 系统参数表
 CREATE TABLE sys_param (
     paramId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '参数ID',
     paramKey VARCHAR(50) NOT NULL UNIQUE COMMENT '参数键',
@@ -199,7 +155,7 @@ CREATE TABLE sys_param (
     INDEX idx_key(paramKey)
 ) COMMENT '系统参数表';
 
--- 13. 智能合约管理表
+-- 10. 智能合约管理表
 CREATE TABLE chain_contract (
     contractId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '合约ID',
     contractName VARCHAR(100) NOT NULL COMMENT '合约名称',
@@ -215,7 +171,7 @@ CREATE TABLE chain_contract (
     INDEX idx_status(contractStatus)
 ) COMMENT '智能合约管理表';
 
--- 14. 数据存证表
+-- 11. 数据存证表
 CREATE TABLE chain_evidence (
     evidenceId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '存证ID',
     evidenceHash VARCHAR(64) NOT NULL UNIQUE COMMENT '存证哈希',

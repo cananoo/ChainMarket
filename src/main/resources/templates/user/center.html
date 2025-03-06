@@ -18,7 +18,7 @@
     </style>
 </head>
 <body>
-    <!-- 替换原有导航栏 -->
+    <!-- 已经使用导航栏片段 -->
     <div th:replace="fragments/navbar :: navbar"></div>
 
     <div class="ui main container">
@@ -377,11 +377,11 @@
         </div>
     </div>
 
-    <!-- 页面底部添加退出登录脚本 -->
-    <script th:replace="fragments/navbar :: logout-script"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <!-- 添加退出脚本引用 -->
+    <script th:replace="fragments/navbar :: logout-script"></script>
+    
     <script>
         $(document).ready(function() {
             // 初始化标签页

@@ -2,10 +2,8 @@ package com.chainmarket.service.impl;
 
 import com.chainmarket.dao.OrderDao;
 import com.chainmarket.dao.GoodsDao;
-import com.chainmarket.dao.GoodsHistoryDao;
 import com.chainmarket.entity.Order;
 import com.chainmarket.entity.Goods;
-import com.chainmarket.entity.GoodsHistory;
 import com.chainmarket.service.IOrderService;
 import com.chainmarket.exception.BusinessException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +21,6 @@ public class OrderServiceImpl implements IOrderService {
     
     @Autowired
     private GoodsDao goodsDao;
-    
-    @Autowired
-    private GoodsHistoryDao goodsHistoryDao;
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -108,15 +103,6 @@ public class OrderServiceImpl implements IOrderService {
         
         // 更新商品所有权和状态
         Goods goods = goodsDao.selectById(order.getGoodsId());
-        
-        // 记录历史所有者
-        GoodsHistory history = new GoodsHistory();
-        history.setGoodsId(goods.getGoodsId());
-        history.setUserId(goods.getSellerId());  // 记录原卖家
-        history.setStartTime(goods.getCreateTime());
-        history.setEndTime(LocalDateTime.now());
-        history.setTxHash(order.getTxHash());
-        goodsHistoryDao.insert(history);
         
         // 转移商品所有权
         goods.setSellerId(order.getBuyerId());
@@ -271,19 +257,10 @@ public class OrderServiceImpl implements IOrderService {
         order.setReceiveTime(LocalDateTime.now());
         orderDao.updateById(order);
         
-        // 更新商品所有权
+        // 更新商品所有权 - 这部分将移至区块链
         Goods goods = goodsDao.selectById(order.getGoodsId());
         
-        // 记录历史所有者
-        GoodsHistory history = new GoodsHistory();
-        history.setGoodsId(goods.getGoodsId());
-        history.setUserId(goods.getSellerId());
-        history.setStartTime(goods.getCreateTime());
-        history.setEndTime(LocalDateTime.now());
-        history.setTxHash(order.getTxHash());
-        goodsHistoryDao.insert(history);
-        
-        // 转移商品所有权
+        // 转移商品所有权 - 仅更新数据库记录，溯源信息将由区块链处理
         goods.setSellerId(order.getBuyerId());
         goods.setStatus(1);  // 设置为已上架状态，无需再审核
         goodsDao.updateById(goods);

@@ -12,9 +12,13 @@
                 ChainMarket
             </a>
             <a href="/market" class="item">商品市场</a>
-            <a href="/arbitration" class="item" th:if="${session.user != null && session.user.roleType == 1}">
+            <a href="/arbitration" class="item" th:if="${session.user != null && (session.user.roleType == 1 || session.user.roleType == 9)}">
                 <i class="balance scale icon"></i>
                 仲裁中心
+            </a>
+            <a href="http://192.168.95.142:5000" target="_blank" class="item" th:if="${session.user != null && session.user.roleType == 9}">
+                <i class="database icon"></i>
+                链上数据管理
             </a>
             <a href="/about" class="item">关于我们</a>
             
@@ -41,11 +45,18 @@
     <script th:fragment="logout-script">
         function logout() {
             if(confirm('确定要退出登录吗？')) {
-                $.post('/user/logout', function(res) {
-                    if(res.code === 200) {
-                        window.location.href = '/';
-                    } else {
-                        alert(res.message);
+                $.ajax({
+                    url: '/user/logout',
+                    type: 'POST',
+                    success: function(res) {
+                        if(res.code === 200) {
+                            window.location.href = '/';
+                        } else {
+                            alert(res.message);
+                        }
+                    },
+                    error: function() {
+                        alert('退出失败，请重试');
                     }
                 });
             }
