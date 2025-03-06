@@ -100,11 +100,9 @@ CREATE TABLE order_review (
     buyerId BIGINT NOT NULL COMMENT '买家ID',
     score TINYINT NOT NULL COMMENT '评分(1-5分)',
     content TEXT COMMENT '评价内容',
-    txHash VARCHAR(66) COMMENT '区块链交易哈希',
     createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '评价时间',
     INDEX idx_order(orderId),
     INDEX idx_buyer(buyerId),
-    INDEX idx_hash(txHash),
     FOREIGN KEY (orderId) REFERENCES order_info(orderId),
     FOREIGN KEY (buyerId) REFERENCES user_info(userId)
 ) COMMENT '订单评价表';
@@ -175,7 +173,7 @@ CREATE TABLE chain_contract (
 CREATE TABLE chain_evidence (
     evidenceId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '存证ID',
     evidenceHash VARCHAR(64) NOT NULL UNIQUE COMMENT '存证哈希',
-    businessType TINYINT NOT NULL COMMENT '业务类型(1-订单 2-评价 3-仲裁)',
+    businessType TINYINT NOT NULL COMMENT '业务类型(1-订单 2-仲裁)',
     businessId BIGINT NOT NULL COMMENT '业务ID',
     evidenceContent TEXT NOT NULL COMMENT '存证内容',
     txHash VARCHAR(66) NOT NULL COMMENT '上链交易哈希',

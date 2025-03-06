@@ -25,39 +25,36 @@ public class ReviewServiceImpl implements IReviewService {
 
     @Override
     public boolean existsOrderReview(Long orderId) {
-        if (orderId == null) {
-            return false;
-        }
         return orderReviewDao.existsByOrderId(orderId);
     }
     
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void submitReview(OrderReviewDTO reviewDTO, Long userId) {
-        // 验证订单是否存在
+        // 验证订单
         Order order = orderDao.selectById(reviewDTO.getOrderId());
         if (order == null) {
             throw new BusinessException("订单不存在");
         }
         
-        // 验证订单状态
-        if (order.getStatus() != 3) {
-            throw new BusinessException("只能评价已完成的订单");
-        }
-        
-        // 验证是否是买家
+        // 验证买家身份
         if (!order.getBuyerId().equals(userId)) {
             throw new BusinessException("只有买家才能评价订单");
         }
         
-        // 验证是否已评价
-        if (existsOrderReview(reviewDTO.getOrderId())) {
-            throw new BusinessException("该订单已评价");
+        // 验证订单状态
+        if (order.getStatus() != 3) { // 3-已完成
+            throw new BusinessException("只能评价已完成的订单");
+        }
+        
+        // 检查是否已评价
+        if (existsOrderReview(order.getOrderId())) {
+            throw new BusinessException("该订单已评价，不能重复评价");
         }
         
         // 验证评分
-        if (reviewDTO.getScore() == null || reviewDTO.getScore() < 1 || reviewDTO.getScore() > 5) {
-            throw new BusinessException("评分必须在1-5之间");
+        if (reviewDTO.getScore() < 1 || reviewDTO.getScore() > 5) {
+            throw new BusinessException("评分必须在1-5分之间");
         }
         
         // 创建评价

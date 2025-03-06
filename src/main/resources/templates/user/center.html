@@ -15,6 +15,62 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             border-radius: 4px;
         }
+        /* 钱包地址显示样式 */
+        .wallet-address {
+            font-family: monospace;
+            font-size: 0.9em;
+            word-break: break-all;
+            max-width: 100%;
+            display: inline-block;
+        }
+        
+        /* 统计数字显示样式 */
+        .ui.statistics .statistic > .value {
+            font-size: 2em !important;
+        }
+        
+        /* 钱包地址统计值特殊样式 */
+        .ui.statistics .statistic > .value.address-value {
+            font-size: 1rem !important;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        
+        /* 钱包管理样式 */
+        .wallet-address {
+            font-family: monospace;
+            word-break: break-all;
+            color: #666;
+            line-height: 1.4;
+            font-size: 0.95em;
+        }
+        
+        .ui.huge.text {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2185d0;
+            margin: 0.5em 0;
+        }
+        
+        .ui.card .header {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 0.5em;
+        }
+        
+        .ui.card .content {
+            padding: 1.5em;
+        }
+        
+        .ui.form .buttons {
+            margin-top: 1em;
+        }
+        
+        /* 输入框样式优化 */
+        .ui.input input[type="number"] {
+            font-size: 1.1em;
+            padding: 0.6em 1em;
+        }
     </style>
 </head>
 <body>
@@ -110,17 +166,61 @@
                 
                 <!-- 钱包信息 -->
                 <div class="ui tab segment" data-tab="wallet">
-                    <div class="user-info">
-                        <h3 class="ui dividing header">钱包信息</h3>
-                        <div class="ui list">
-                            <div class="item">
-                                <i class="address card icon"></i>
-                                <div class="content">
-                                    <div class="header">钱包地址</div>
-                                    <div class="description">
-                                        <code th:text="${user.walletAddress ?: '暂未生成钱包'}">钱包地址</code>
+                    <h3 class="ui dividing header">
+                        <i class="wallet icon"></i>
+                        钱包管理
+                    </h3>
+                    
+                    <div class="ui segment">
+                        <!-- 使用网格系统来布局 -->
+                        <div class="ui two column grid">
+                            <div class="column">
+                                <div class="ui fluid card">
+                                    <div class="content">
+                                        <div class="header">账户余额</div>
+                                        <div class="description">
+                                            <div class="ui huge text">
+                                                <span id="walletBalance">0.00</span>
+                                                <span class="ui basic label">元</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+                            </div>
+                            <div class="column">
+                                <div class="ui fluid card">
+                                    <div class="content">
+                                        <div class="header">钱包地址</div>
+                                        <div class="description">
+                                            <div class="ui small text wallet-address" style="margin-top: 0.5em;">
+                                                <span th:text="${user.walletAddress}">0x...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="ui divider"></div>
+                        
+                        <!-- 充值表单 -->
+                        <div class="ui form">
+                            <div class="field">
+                                <label>充值金额</label>
+                                <div class="ui right labeled input">
+                                    <input type="number" id="rechargeAmount" step="0.01" min="0.01" placeholder="请输入充值金额">
+                                    <div class="ui basic label">元</div>
+                                </div>
+                            </div>
+                            <div class="ui buttons">
+                                <button class="ui primary button" onclick="recharge()">
+                                    <i class="plus circle icon"></i>
+                                    充值
+                                </button>
+                                <button class="ui button" onclick="refreshBalance()">
+                                    <i class="sync icon"></i>
+                                    刷新余额
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -392,6 +492,9 @@
             
             // 设置只读评分组件
             $('.ui.rating[data-read-only="true"]').rating('disable');
+            
+            // 页面加载完成后自动获取余额
+            refreshBalance();
         });
         
         function confirmOrder(orderId) {
@@ -522,6 +625,42 @@
                    String(date.getHours()).padStart(2, '0') + ':' +
                    String(date.getMinutes()).padStart(2, '0') + ':' +
                    String(date.getSeconds()).padStart(2, '0');
+        }
+        
+        // 刷新余额
+        function refreshBalance() {
+            $.get('/wallet/balance', function(res) {
+                if(res.code === 200) {
+                    $('#walletBalance').text(res.data);
+                } else {
+                    alert('获取余额失败：' + res.message);
+                }
+            });
+        }
+        
+        // 充值
+        function recharge() {
+            const amount = $('#rechargeAmount').val();
+            if(!amount || amount <= 0) {
+                alert('请输入有效的充值金额');
+                return;
+            }
+            
+            $.ajax({
+                url: '/wallet/recharge',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({amount: amount}),
+                success: function(res) {
+                    if(res.code === 200) {
+                        alert('充值成功');
+                        refreshBalance();
+                        $('#rechargeAmount').val('');
+                    } else {
+                        alert('充值失败：' + res.message);
+                    }
+                }
+            });
         }
     </script>
 </body>

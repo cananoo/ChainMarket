@@ -21,9 +21,6 @@ public class OrderReview {
     
     private String content;  // 评价内容
     
-    @TableField("txHash")
-    private String txHash;  // 区块链交易哈希
-    
     @TableField(value = "createTime", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 }
