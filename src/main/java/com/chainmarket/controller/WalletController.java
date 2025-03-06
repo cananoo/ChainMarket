@@ -49,4 +49,24 @@ public class WalletController {
             return Result.error(e.getMessage());
         }
     }
+    
+    @PostMapping("/withdraw")
+    public Result<Void> withdraw(@RequestBody Map<String, BigDecimal> params, HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return Result.error("请先登录");
+        }
+        
+        BigDecimal amount = params.get("amount");
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            return Result.error("请输入正确的提现金额");
+        }
+        
+        try {
+            walletService.withdraw(user.getWalletAddress(), amount);
+            return Result.success("提现成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
 } 

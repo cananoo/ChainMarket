@@ -6,6 +6,7 @@ import java.util.UUID;
 import java.math.BigDecimal;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import com.chainmarket.exception.BusinessException;
 
 @Service
 public class WalletServiceImpl implements IWalletService {
@@ -36,6 +37,16 @@ public class WalletServiceImpl implements IWalletService {
                 return amount;
             }
             return oldValue.add(amount);
+        });
+    }
+    
+    @Override
+    public void withdraw(String address, BigDecimal amount) {
+        balanceMap.compute(address, (key, oldValue) -> {
+            if (oldValue == null || oldValue.compareTo(amount) < 0) {
+                throw new BusinessException("余额不足");
+            }
+            return oldValue.subtract(amount);
         });
     }
     

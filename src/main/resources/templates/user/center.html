@@ -206,9 +206,9 @@
                         <!-- 充值表单 -->
                         <div class="ui form">
                             <div class="field">
-                                <label>充值金额</label>
+                                <label>金额操作</label>
                                 <div class="ui right labeled input">
-                                    <input type="number" id="rechargeAmount" step="0.01" min="0.01" placeholder="请输入充值金额">
+                                    <input type="number" id="amountInput" step="0.01" min="0.01" placeholder="请输入金额">
                                     <div class="ui basic label">元</div>
                                 </div>
                             </div>
@@ -217,7 +217,11 @@
                                     <i class="plus circle icon"></i>
                                     充值
                                 </button>
-                                <button class="ui button" onclick="refreshBalance()">
+                                <button class="ui orange button" onclick="withdraw()">
+                                    <i class="minus circle icon"></i>
+                                    提现
+                                </button>
+                                <button class="ui basic button" onclick="refreshBalance()">
                                     <i class="sync icon"></i>
                                     刷新余额
                                 </button>
@@ -640,9 +644,9 @@
         
         // 充值
         function recharge() {
-            const amount = $('#rechargeAmount').val();
+            const amount = $('#amountInput').val();
             if(!amount || amount <= 0) {
-                alert('请输入有效的充值金额');
+                alert('请输入有效的金额');
                 return;
             }
             
@@ -655,9 +659,34 @@
                     if(res.code === 200) {
                         alert('充值成功');
                         refreshBalance();
-                        $('#rechargeAmount').val('');
+                        $('#amountInput').val('');
                     } else {
                         alert('充值失败：' + res.message);
+                    }
+                }
+            });
+        }
+        
+        // 提现
+        function withdraw() {
+            const amount = $('#amountInput').val();
+            if(!amount || amount <= 0) {
+                alert('请输入有效的金额');
+                return;
+            }
+            
+            $.ajax({
+                url: '/wallet/withdraw',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({amount: amount}),
+                success: function(res) {
+                    if(res.code === 200) {
+                        alert('提现成功');
+                        refreshBalance();
+                        $('#amountInput').val('');
+                    } else {
+                        alert('提现失败：' + res.message);
                     }
                 }
             });

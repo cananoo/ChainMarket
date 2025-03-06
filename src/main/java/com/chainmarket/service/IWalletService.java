@@ -22,4 +22,11 @@ public interface IWalletService {
      * @param amount 充值金额
      */
     void recharge(String address, BigDecimal amount);
+
+    /**
+     * 提现（模拟）
+     * @param address 钱包地址
+     * @param amount 提现金额
+     */
+    void withdraw(String address, BigDecimal amount);
 } 
