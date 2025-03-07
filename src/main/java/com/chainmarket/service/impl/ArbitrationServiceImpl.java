@@ -22,6 +22,8 @@ import java.util.List;
 @Service
 public class ArbitrationServiceImpl implements IArbitrationService {
     
+    private static final String WALLET_ADDRESS = "0x3a20b086b5523c49ea04c2e16ba1dac63f8b51a1";
+    
     @Autowired
     private ArbitrationDao arbitrationDao;
     

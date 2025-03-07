@@ -9,12 +9,21 @@ import com.chainmarket.entity.Goods;
 import com.chainmarket.entity.AuditInfo;
 import com.chainmarket.service.IAuditService;
 import com.chainmarket.exception.BusinessException;
+
+import org.fisco.bcos.sdk.abi.ABICodecException;
+import org.fisco.bcos.sdk.transaction.manager.AssembleTransactionProcessor;
+import org.fisco.bcos.sdk.transaction.model.dto.TransactionResponse;
+import org.fisco.bcos.sdk.transaction.model.exception.TransactionBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+
 import com.chainmarket.service.IWalletService;
+import com.chainmarket.util.BcosClientWrapper;
 
 @Service
 public class AuditServiceImpl implements IAuditService {
@@ -33,6 +42,11 @@ public class AuditServiceImpl implements IAuditService {
     
     @Autowired
     private IWalletService walletService;
+
+    @Autowired
+    private BcosClientWrapper bcosClientWrapper;
+
+    public static final String WALLET_ADDRESS = "0x3a20b086b5523c49ea04c2e16ba1dac63f8b51a1";
     
     @Override
     public List<User> getPendingUsers() {
@@ -41,7 +55,7 @@ public class AuditServiceImpl implements IAuditService {
     
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void auditUser(AuditDTO auditDTO) {
+    public void auditUser(AuditDTO auditDTO) throws ABICodecException, TransactionBaseException {
         // 获取当前登录用户
         User currentUser = (User) session.getAttribute("user");
         if (currentUser == null) {
@@ -61,6 +75,13 @@ public class AuditServiceImpl implements IAuditService {
         if (auditDTO.getStatus() == 1) {
             String walletAddress = walletService.generateWalletAddress();
             user.setWalletAddress(walletAddress);
+
+            // 链上注册
+           AssembleTransactionProcessor processor = bcosClientWrapper.getTransactionProcessor();
+           List<Object> params = new ArrayList<>();
+           params.add(user.getUsername());
+           params.add(user.getWalletAddress());
+          processor.sendTransactionAndGetResponseByContractLoader("Wallet", WALLET_ADDRESS, "createUser", params);
         }
         userDao.updateById(user);
         
