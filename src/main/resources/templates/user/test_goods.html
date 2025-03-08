@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>测试商品列表</title>
+</head>
+<body>
+    <h1>我的商品列表测试</h1>
+    
+    <div th:if="${goodsList == null || goodsList.isEmpty()}">
+        <p>您还没有发布任何商品</p>
+    </div>
+    
+    <div th:if="${goodsList != null && !goodsList.isEmpty()}">
+        <p>找到 <span th:text="${goodsList.size()}"></span> 个商品</p>
+        <ul>
+            <li th:each="goods : ${goodsList}">
+                <span th:text="${goods.goodsId}"></span> - 
+                <span th:text="${goods.goodsName}"></span> - 
+                <span th:text="${goods.status}"></span>
+            </li>
+        </ul>
+    </div>
+</body>
+</html> 

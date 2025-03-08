@@ -60,4 +60,25 @@ public interface IGoodsService {
      * @return 商品列表
      */
     List<Goods> getLatestGoods(int limit);
+
+    /**
+     * 获取用户发布的商品列表
+     * @param userId 用户ID
+     * @return 商品列表
+     */
+    List<Goods> getUserGoods(Long userId);
+
+    /**
+     * 上架商品
+     * @param goodsId 商品ID
+     * @param userId 用户ID
+     */
+    void listGoods(Long goodsId, Long userId);
+
+    /**
+     * 下架商品
+     * @param goodsId 商品ID
+     * @param userId 用户ID
+     */
+    void delistGoods(Long goodsId, Long userId);
 } 

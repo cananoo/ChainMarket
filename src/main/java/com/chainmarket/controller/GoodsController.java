@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.servlet.http.HttpSession;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.ui.Model;
+import java.util.List;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 
 @Controller
 @RequestMapping("/goods")
@@ -107,5 +109,71 @@ public class GoodsController {
         model.addAttribute("seller", seller);
         
         return "goods/detail";
+    }
+
+    @GetMapping("/my/page")
+    public String myGoodsPage(Model model, HttpSession session) {
+        System.out.println("===== 访问我的商品页面 =====");
+        
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            System.out.println("用户未登录");
+            return "redirect:/user/login";
+        }
+        
+        System.out.println("当前用户ID: " + user.getUserId());
+        
+        List<Goods> goodsList = goodsService.getUserGoods(user.getUserId());
+        System.out.println("查询到商品数量: " + (goodsList != null ? goodsList.size() : "null"));
+        
+        model.addAttribute("goodsList", goodsList);
+        return "user/goods";
+    }
+
+    @GetMapping("/my")
+    @ResponseBody
+    public Result getMyGoods(HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return Result.error("请先登录");
+        }
+        List<Goods> goodsList = goodsService.getUserGoods(user.getUserId());
+        return Result.success(goodsList);
+    }
+
+    @PostMapping("/list/{goodsId}")
+    @ResponseBody
+    public Result listGoods(@PathVariable Long goodsId, HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return Result.error("请先登录");
+        }
+        goodsService.listGoods(goodsId, user.getUserId());
+        return Result.success("上架成功");
+    }
+
+    @PostMapping("/delist/{goodsId}")
+    @ResponseBody
+    public Result delistGoods(@PathVariable Long goodsId, HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return Result.error("请先登录");
+        }
+        goodsService.delistGoods(goodsId, user.getUserId());
+        return Result.success("下架成功");
+    }
+
+    @GetMapping("/test/my")
+    public String testMyGoods(Model model, HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return "redirect:/user/login";
+        }
+        
+        // 直接查询数据库
+        List<Goods> goodsList = goodsService.getUserGoods(user.getUserId());
+        
+        model.addAttribute("goodsList", goodsList);
+        return "user/test_goods";
     }
 } 

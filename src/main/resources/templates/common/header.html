@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <div th:fragment="header" class="ui fixed inverted menu">
+        <div class="ui container">
+            <a href="/" class="header item">
+                <i class="chain icon"></i>
+                ChainMarket
+            </a>
+            <a href="/market" class="item">商品市场</a>
+            <a th:if="${session.user != null}" href="/arbitration" class="item">
+                <i class="balance scale icon"></i>
+                仲裁中心
+            </a>
+            <a href="/about" class="item">关于我们</a>
+            <div class="right menu">
+                <th:block th:if="${session.user != null}">
+                    <div class="item">
+                        <i class="user icon"></i>
+                        <span th:text="${session.user.username}">用户名</span>
+                    </div>
+                    <a href="/user/center" class="item">个人中心</a>
+                    <a href="/user/logout" class="item">退出</a>
+                </th:block>
+                <th:block th:if="${session.user == null}">
+                    <a href="/user/register" class="item">注册</a>
+                    <a href="/user/login" class="item">登录</a>
+                </th:block>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

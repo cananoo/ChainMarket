@@ -16,14 +16,14 @@ import org.fisco.bcos.sdk.transaction.model.dto.TransactionResponse;
 
 @Service
 public class WalletServiceImpl implements IWalletService {
-    
+
     @Autowired
     private BcosClientWrapper bcosClientWrapper;
-    
+
     private static final String WALLET_ADDRESS = "0x3a20b086b5523c49ea04c2e16ba1dac63f8b51a1";
-    
+
     private Map<String, BigDecimal> balanceMap = new ConcurrentHashMap<>();
-    
+
     @Override
     public String generateWalletAddress() {
         // 生成UUID并去掉'-'
@@ -35,22 +35,22 @@ public class WalletServiceImpl implements IWalletService {
         // 添加"0x"前缀
         return "0x" + uuid;
     }
-    
+
     @Override
     public BigDecimal getBalance(String address) {
         try {
             AssembleTransactionProcessor processor = bcosClientWrapper.getTransactionProcessor();
-            
+
             List<Object> params = new ArrayList<>();
             params.add(address);
-            
+
             TransactionResponse response = processor.sendTransactionAndGetResponseByContractLoader(
-                "Wallet",
-                WALLET_ADDRESS,
-                "getBalance",
-                params
+                    "Wallet",
+                    WALLET_ADDRESS,
+                    "getBalance",
+                    params
             );
-            
+
             // 检查是否有错误消息
             if ("Success".equals(response.getReceiptMessages())) {
                 String values = response.getValues();
@@ -66,23 +66,23 @@ public class WalletServiceImpl implements IWalletService {
             throw new BusinessException("查询余额失败: " + e.getMessage());
         }
     }
-    
+
     @Override
     public void recharge(String address, BigDecimal amount) {
         try {
             AssembleTransactionProcessor processor = bcosClientWrapper.getTransactionProcessor();
-            
+
             List<Object> params = new ArrayList<>();
             params.add(address);
             params.add(amount.toString());
-            
+
             TransactionResponse response = processor.sendTransactionAndGetResponseByContractLoader(
-                "Wallet",
-                WALLET_ADDRESS,
-                "deposit",
-                params
+                    "Wallet",
+                    WALLET_ADDRESS,
+                    "deposit",
+                    params
             );
-            
+
             if (!"Success".equals(response.getReceiptMessages())) {
                 throw new BusinessException("充值失败: " + response.getReceiptMessages());
             }
@@ -90,23 +90,23 @@ public class WalletServiceImpl implements IWalletService {
             throw new BusinessException("充值失败: " + e.getMessage());
         }
     }
-    
+
     @Override
     public void withdraw(String address, BigDecimal amount) {
         try {
             AssembleTransactionProcessor processor = bcosClientWrapper.getTransactionProcessor();
-            
+
             List<Object> params = new ArrayList<>();
             params.add(address);  // 添加地址参数
             params.add(amount.toString());
-            
+
             TransactionResponse response = processor.sendTransactionAndGetResponseByContractLoader(
-                "Wallet",
-                WALLET_ADDRESS,
-                "withdraw",
-                params
+                    "Wallet",
+                    WALLET_ADDRESS,
+                    "withdraw",
+                    params
             );
-            
+
             if (!"Success".equals(response.getReceiptMessages())) {
                 throw new BusinessException("提现失败: " + response.getReceiptMessages());
             }
@@ -114,6 +114,6 @@ public class WalletServiceImpl implements IWalletService {
             throw new BusinessException("提现失败: " + e.getMessage());
         }
     }
-    
+
     // 其他钱包相关操作直接调用FISCO BCOS的API
 } 

@@ -1,5 +1,8 @@
 package com.chainmarket.controller;
 
+import com.chainmarket.dao.GoodsCategoryDao;
+import com.chainmarket.entity.Goods;
+import com.chainmarket.entity.GoodsCategory;
 import com.chainmarket.entity.User;
 import com.chainmarket.service.IGoodsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import javax.servlet.http.HttpSession;
+import java.util.List;
 
 @Controller
 @RequestMapping("/market")
@@ -17,19 +21,32 @@ public class MarketController {
     @Autowired
     private IGoodsService goodsService;
     
-    @GetMapping
-    public String market(Model model, HttpSession session, @RequestParam(required = false) Long categoryId) {
-        // 获取商品分类
-        model.addAttribute("categories", goodsService.getCategories());
+    @Autowired
+    private GoodsCategoryDao categoryDao;
+    
+    @GetMapping("")
+    public String market(Model model, 
+                         @RequestParam(required = false) Long categoryId,
+                         HttpSession session) {
         
-        // 获取当前选中的分类
-        model.addAttribute("currentCategoryId", categoryId);
+        List<GoodsCategory> categories = categoryDao.selectList(null);
+        model.addAttribute("categories", categories);
         
         // 获取已上架商品列表
+        List<Goods> goodsList;
         if (categoryId != null) {
-            model.addAttribute("goodsList", goodsService.getOnSaleGoodsByCategory(categoryId));
+            goodsList = goodsService.getOnSaleGoodsByCategory(categoryId);
+            model.addAttribute("activeCategoryId", categoryId);
         } else {
-            model.addAttribute("goodsList", goodsService.getOnSaleGoods());
+            goodsList = goodsService.getOnSaleGoods();
+        }
+        model.addAttribute("goodsList", goodsList);
+        
+        // 如果用户已登录，获取用户的商品列表
+        User user = (User) session.getAttribute("user");
+        if (user != null) {
+            List<Goods> myGoodsList = goodsService.getUserGoods(user.getUserId());
+            model.addAttribute("myGoodsList", myGoodsList);
         }
         
         return "market/index";

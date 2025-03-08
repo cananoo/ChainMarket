@@ -12,54 +12,49 @@
         .goods-card {
             height: 100%;
         }
-        .goods-card .image {
+        .goods-image {
             height: 200px;
-            overflow: hidden;
-        }
-        .goods-card .image img {
-            width: 100%;
-            height: 100%;
             object-fit: cover;
         }
-        .ui.basic.button.active {
-            background-color: #2185d0 !important;
-            color: white !important;
-            box-shadow: none !important;
+        .my-goods-section {
+            margin-bottom: 2em;
+            padding-bottom: 1em;
+            border-bottom: 1px solid #eee;
         }
-        .ui.horizontal.list .item {
-            margin-right: 0.5em;
-        }
-        .ui.basic.button {
-            transition: all 0.3s ease;
-        }
-        .ui.basic.button:hover {
-            background-color: #f8f9fa !important;
-            transform: translateY(-1px);
+        .goods-thumbnail {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
         }
     </style>
 </head>
 <body>
-    <!-- 使用导航栏片段替换原有导航栏 -->
-    <div th:replace="fragments/navbar :: navbar"></div>
+    <!-- 导航栏 -->
+    <div th:replace="~{common/header :: header}"></div>
 
     <div class="ui main container">
-        <!-- 卖家功能区 -->
-        <div class="ui segment" th:if="${session.user != null && session.user.roleType == 1}">
-            <h3 class="ui header">
-                <i class="shop icon"></i>
+        <!-- 我的商品部分 - 仅登录用户可见 -->
+        <div th:if="${session.user != null}" class="my-goods-section">
+            <h2 class="ui header">
+                <i class="shopping cart icon"></i>
                 <div class="content">
                     我发布的商品
                     <div class="sub header">管理您的商品</div>
                 </div>
-            </h3>
+            </h2>
+            
             <a href="/goods/upload" class="ui primary button">
                 <i class="plus icon"></i>
                 上传新商品
             </a>
+            
             <div class="ui divider"></div>
+            
+            <!-- 我的商品列表 - 表格布局 -->
             <table class="ui celled table">
                 <thead>
                     <tr>
+                        <th>商品图片</th>
                         <th>商品名称</th>
                         <th>价格</th>
                         <th>状态</th>
@@ -68,105 +63,137 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:each="goods : ${myGoods}">
-                        <td th:text="${goods.goodsName}">商品名称</td>
-                        <td th:text="'￥' + ${goods.price}">价格</td>
+                    <tr th:each="goods : ${myGoodsList}">
                         <td>
-                            <div class="ui label" 
-                                 th:classappend="${
-                                    goods.status == 0 ? 'yellow' : 
-                                    goods.status == 1 ? 'green' : 
-                                    goods.status == 2 ? 'grey' :
-                                    goods.status == 3 ? 'blue' : ''
-                                 }"
-                                 th:text="${
-                                    goods.status == 0 ? '待审核' :
-                                    goods.status == 1 ? '已上架' :
-                                    goods.status == 2 ? '已下架' :
-                                    goods.status == 3 ? '已售出' : '未知'
-                                 }">
+                            <img th:src="${goods.imageUrl != null ? goods.imageUrl : '/images/default.png'}" 
+                                 class="goods-thumbnail" alt="商品图片">
+                        </td>
+                        <td th:text="${goods.goodsName}">商品名称</td>
+                        <td>￥<span th:text="${goods.price}">价格</span></td>
+                        <td>
+                            <div th:class="${
+                                goods.status == 0 ? 'ui yellow label' : 
+                                goods.status == 1 ? 'ui green label' : 
+                                goods.status == 2 ? 'ui grey label' :
+                                goods.status == 3 ? 'ui blue label' : ''
+                            }"
+                            th:text="${
+                                goods.status == 0 ? '待审核' :
+                                goods.status == 1 ? '已上架' :
+                                goods.status == 2 ? '已下架' :
+                                goods.status == 3 ? '已售出' : '未知'
+                            }">
                                 状态
                             </div>
                         </td>
                         <td th:text="${#temporals.format(goods.createTime, 'yyyy-MM-dd HH:mm')}">创建时间</td>
                         <td>
-                            <div class="ui tiny buttons">
-                                <a class="ui blue button" th:href="@{/goods/detail/{id}(id=${goods.goodsId})}">查看</a>
-                                <button class="ui button" th:if="${goods.status == 1}"
-                                        th:onclick="'updateGoodsStatus(' + ${goods.goodsId} + ', 2)'">下架</button>
-                                <button class="ui positive button" th:if="${goods.status == 2}"
-                                        th:onclick="'updateGoodsStatus(' + ${goods.goodsId} + ', 1)'">上架</button>
-                            </div>
+                            <!-- 已下架商品显示上架按钮 -->
+                            <button th:if="${goods.status == 2}" 
+                                    class="ui primary mini button"
+                                    th:onclick="'listGoods(' + ${goods.goodsId} + ')'">
+                                上架
+                            </button>
+                            <!-- 已上架商品显示下架按钮 -->
+                            <button th:if="${goods.status == 1}"
+                                    class="ui grey mini button"
+                                    th:onclick="'delistGoods(' + ${goods.goodsId} + ')'">
+                                下架
+                            </button>
                         </td>
                     </tr>
                 </tbody>
             </table>
+            
+            <!-- 没有我的商品时显示提示 -->
+            <div th:if="${myGoodsList == null || myGoodsList.isEmpty()}" class="ui segment">
+                <p>您还没有发布任何商品</p>
+            </div>
         </div>
 
-        <!-- 分类筛选 -->
-        <div class="ui segment">
-            <div class="ui horizontal list">
-                <div class="item">
-                    <a class="ui basic button" th:classappend="${currentCategoryId == null ? 'active' : ''}" href="/market">全部</a>
-                </div>
-                <div class="item" th:each="category : ${categories}">
-                    <a class="ui basic button" 
-                       th:classappend="${category.categoryId == currentCategoryId ? 'active' : ''}"
-                       th:href="@{/market(categoryId=${category.categoryId})}" 
-                       th:text="${category.categoryName}">分类名称</a>
-                </div>
+        <!-- 商品市场部分 -->
+        <h2 class="ui header">
+            <i class="shopping bag icon"></i>
+            <div class="content">
+                商品市场
+                <div class="sub header">浏览和购买区块链商品</div>
             </div>
+        </h2>
+
+        <!-- 分类菜单 -->
+        <div class="ui secondary pointing menu">
+            <a th:class="${activeCategoryId == null ? 'active item' : 'item'}" href="/market">
+                全部商品
+            </a>
+            <a th:each="category : ${categories}" 
+               th:class="${activeCategoryId != null && activeCategoryId == category.categoryId ? 'active item' : 'item'}" 
+               th:href="@{/market(categoryId=${category.categoryId})}">
+                <span th:text="${category.categoryName}">分类名称</span>
+            </a>
         </div>
 
         <!-- 商品列表 -->
         <div class="ui four cards">
-            <div class="card goods-card" th:each="goods : ${goodsList}">
+            <div th:each="goods : ${goodsList}" class="card goods-card">
                 <div class="image">
-                    <img th:src="${goods.imageUrl != null ? goods.imageUrl : '/images/default.png'}" alt="商品图片">
+                    <img th:src="${goods.imageUrl != null ? goods.imageUrl : '/images/default.png'}" 
+                         class="goods-image" alt="商品图片">
                 </div>
                 <div class="content">
-                    <div class="header" th:text="${goods.goodsName}">商品名称</div>
+                    <a th:href="@{/goods/detail/{id}(id=${goods.goodsId})}" class="header" th:text="${goods.goodsName}">商品名称</a>
                     <div class="meta">
-                        <span class="price" th:text="'￥' + ${goods.price}">价格</span>
+                        <span class="price">￥<span th:text="${goods.price}">价格</span></span>
                     </div>
-                    <div class="description" th:text="${goods.goodsDesc}">商品描述</div>
                 </div>
                 <div class="extra content">
-                    <a class="ui primary button fluid" th:href="@{/goods/detail/{id}(id=${goods.goodsId})}">
+                    <a th:href="@{/goods/detail/{id}(id=${goods.goodsId})}" class="ui primary button fluid">
                         查看详情
                     </a>
                 </div>
             </div>
         </div>
+        
+        <!-- 没有商品时显示提示 -->
+        <div th:if="${goodsList == null || goodsList.isEmpty()}" class="ui segment">
+            <p>暂无商品</p>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
-    <!-- 添加退出脚本引用 -->
-    <script th:replace="fragments/navbar :: logout-script"></script>
-    
     <script>
-        function updateGoodsStatus(goodsId, status) {
-            if (!confirm('确定要更改商品状态吗？')) return;
-            
-            $.ajax({
-                url: '/goods/status',
-                type: 'POST',
-                data: {
-                    goodsId: goodsId,
-                    status: status
-                },
-                success: function(res) {
-                    if (res.code === 200) {
-                        location.reload();
-                    } else {
-                        alert(res.message);
+        function listGoods(goodsId) {
+            if(confirm('确定要上架该商品吗？')) {
+                $.ajax({
+                    url: `/goods/list/${goodsId}`,
+                    type: 'POST',
+                    success: function(res) {
+                        if(res.code === 200) {
+                            alert('上架成功');
+                            location.reload();
+                        } else {
+                            alert(res.message);
+                        }
                     }
-                },
-                error: function(xhr, status, error) {
-                    alert('操作失败: ' + error);
-                }
-            });
+                });
+            }
+        }
+
+        function delistGoods(goodsId) {
+            if(confirm('确定要下架该商品吗？')) {
+                $.ajax({
+                    url: `/goods/delist/${goodsId}`,
+                    type: 'POST',
+                    success: function(res) {
+                        if(res.code === 200) {
+                            alert('下架成功');
+                            location.reload();
+                        } else {
+                            alert(res.message);
+                        }
+                    }
+                });
+            }
         }
     </script>
 </body>

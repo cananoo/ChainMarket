@@ -27,6 +27,39 @@
         .status-label {
             margin-left: 1em !important;
         }
+        .credit-score {
+            display: inline-block;
+            padding: 1px 4px;
+            border-radius: 2px;
+            background-color: #21ba45;
+            color: white;
+            font-weight: bold;
+            font-size: 11px;
+            min-width: 28px;
+            text-align: center;
+            margin-left: 4px;
+            vertical-align: middle;
+            line-height: 1.2;
+        }
+        
+        .credit-score .star {
+            font-size: 9px;
+            margin-right: 1px;
+        }
+
+        .seller-info {
+            margin-top: 0.25em;
+        }
+        
+        .seller-info .ui.label {
+            padding: 5px 8px;
+            font-size: 13px;
+            margin: 0;
+        }
+
+        .ui.list .item .content .description {
+            margin-top: 0.25em;
+        }
     </style>
 </head>
 <body>
@@ -122,16 +155,11 @@
                             <div class="content">
                                 <div class="header">卖家</div>
                                 <div class="description">
-                                    <span th:text="${seller.username}">卖家名称</span>
-                                    <div class="ui label" th:classappend="${
-                                        seller.creditScore >= 90 ? 'green' :
-                                        seller.creditScore >= 70 ? 'blue' :
-                                        seller.creditScore >= 50 ? 'yellow' :
-                                        'red'
-                                    }">
+                                    [[${seller.username}]]
+                                    <span class="credit-score">
                                         <i class="star icon"></i>
-                                        <span th:text="${seller.creditScore}">100</span>
-                                    </div>
+                                        [[${seller.creditScore}]]
+                                    </span>
                                 </div>
                             </div>
                         </div>

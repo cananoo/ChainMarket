@@ -28,5 +28,5 @@ public interface IAuditService {
     /**
      * 审核商品
      */
-    void auditGoods(AuditDTO auditDTO);
+    void auditGoods(AuditDTO auditDTO) throws ABICodecException, TransactionBaseException;
 } 

@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import java.util.Collections;
+import java.util.ArrayList;
 
 @Service
 public class GoodsServiceImpl implements IGoodsService {
@@ -150,5 +153,82 @@ public class GoodsServiceImpl implements IGoodsService {
                 .eq("status", 1)  // 已上架状态
                 .orderByDesc("createTime")
                 .last("LIMIT " + limit));
+    }
+
+    @Override
+    public List<Goods> getUserGoods(Long userId) {
+        System.out.println("===== 开始查询用户商品 =====");
+        System.out.println("用户ID: " + userId);
+        
+        try {
+            // 使用原生SQL查询测试
+            List<Goods> rawResult = goodsDao.selectByMap(Collections.singletonMap("sellerId", userId));
+            System.out.println("原生查询结果数量: " + (rawResult != null ? rawResult.size() : "null"));
+            if (rawResult != null && !rawResult.isEmpty()) {
+                System.out.println("第一条商品ID: " + rawResult.get(0).getGoodsId());
+            }
+            
+            // 使用Lambda查询
+            LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(Goods::getSellerId, userId)
+                   .orderByDesc(Goods::getCreateTime);
+            
+            List<Goods> result = goodsDao.selectList(wrapper);
+            System.out.println("Lambda查询结果数量: " + (result != null ? result.size() : "null"));
+            
+            return result;
+        } catch (Exception e) {
+            System.out.println("查询用户商品异常: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        } finally {
+            System.out.println("===== 结束查询用户商品 =====");
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void listGoods(Long goodsId, Long userId) {
+        Goods goods = goodsDao.selectById(goodsId);
+        if (goods == null) {
+            throw new BusinessException("商品不存在");
+        }
+        
+        // 验证所有权
+        if (!goods.getSellerId().equals(userId)) {
+            throw new BusinessException("无权操作此商品");
+        }
+        
+        // 验证状态
+        if (goods.getStatus() != 2) {  // 只有已下架的商品可以上架
+            throw new BusinessException("当前商品状态不可上架");
+        }
+        
+        // 更新状态为已上架
+        goods.setStatus(1);
+        goodsDao.updateById(goods);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void delistGoods(Long goodsId, Long userId) {
+        Goods goods = goodsDao.selectById(goodsId);
+        if (goods == null) {
+            throw new BusinessException("商品不存在");
+        }
+        
+        // 验证所有权
+        if (!goods.getSellerId().equals(userId)) {
+            throw new BusinessException("无权操作此商品");
+        }
+        
+        // 验证状态
+        if (goods.getStatus() != 1) {  // 只有已上架的商品可以下架
+            throw new BusinessException("当前商品状态不可下架");
+        }
+        
+        // 更新状态为已下架
+        goods.setStatus(2);
+        goodsDao.updateById(goods);
     }
 } 

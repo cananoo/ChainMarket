@@ -1,17 +1,27 @@
 package com.chainmarket.service.impl;
 
-import com.chainmarket.dao.OrderDao;
+import com.chainmarket.dao.ChainEvidenceDao;
 import com.chainmarket.dao.GoodsDao;
-import com.chainmarket.entity.Order;
+import com.chainmarket.dao.OrderDao;
+import com.chainmarket.dao.UserDao;
+import com.chainmarket.entity.ChainEvidence;
 import com.chainmarket.entity.Goods;
-import com.chainmarket.service.IOrderService;
+import com.chainmarket.entity.Order;
+import com.chainmarket.entity.User;
 import com.chainmarket.exception.BusinessException;
+import com.chainmarket.service.IOrderService;
+import com.chainmarket.service.IWalletService;
+import com.chainmarket.util.BcosClientWrapper;
+import org.fisco.bcos.sdk.transaction.model.dto.TransactionResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class OrderServiceImpl implements IOrderService {
@@ -21,6 +31,21 @@ public class OrderServiceImpl implements IOrderService {
     
     @Autowired
     private GoodsDao goodsDao;
+    
+    @Autowired
+    private UserDao userDao;
+    
+    @Autowired
+    private BcosClientWrapper bcosClientWrapper;
+    
+    @Autowired
+    private IWalletService walletService;
+    
+    @Autowired
+    private ChainEvidenceDao chainEvidenceDao;
+    
+    private static final String WALLET_ADDRESS = "0x3a20b086b5523c49ea04c2e16ba1dac63f8b51a1";
+    private static final String GOODS_ADDRESS = "0xf3de04e031091a612887caaf62928ce49cbb7ebf";
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -46,23 +71,87 @@ public class OrderServiceImpl implements IOrderService {
             throw new BusinessException("该商品已有未完成的订单");
         }
         
-        // 创建订单
-        Order order = new Order();
-        order.setOrderNo(generateOrderNo());  // 生成订单编号
-        order.setGoodsId(goodsId);
-        order.setBuyerId(buyerId);
-        order.setSellerId(goods.getSellerId());
-        order.setAmount(goods.getPrice());
-        order.setStatus(1);  // 直接设为待发货状态
+        // 获取买家和卖家信息
+        User buyer = userDao.selectById(buyerId);
+        User seller = userDao.selectById(goods.getSellerId());
+        if (buyer == null || seller == null) {
+            throw new BusinessException("用户信息不存在");
+        }
         
-        // 保存订单
-        orderDao.insert(order);
+        // 检查买家余额
+        BigDecimal balance = walletService.getBalance(buyer.getWalletAddress());
+        if (balance.compareTo(goods.getPrice()) < 0) {
+            throw new BusinessException("余额不足，请先充值");
+        }
         
-        // 更新商品状态为已下架
-        goods.setStatus(2);  // 设置为已下架状态
-        goodsDao.updateById(goods);
-        
-        return order;
+        try {
+            // 1. 执行钱包合约转账
+            List<Object> transferParams = new ArrayList<>();
+            transferParams.add(buyer.getWalletAddress());  // from
+            transferParams.add(seller.getWalletAddress()); // to
+            transferParams.add(goods.getPrice().intValue()); // amount
+            
+            TransactionResponse transferResponse = bcosClientWrapper.getTransactionProcessor()
+                .sendTransactionAndGetResponseByContractLoader(
+                    "Wallet",
+                    WALLET_ADDRESS,
+                    "transfer",
+                    transferParams
+                );
+            
+            if (!"Success".equals(transferResponse.getReceiptMessages())) {
+                throw new BusinessException("转账失败: " + transferResponse.getReceiptMessages());
+            }
+            
+            // 2. 执行商品所有权转移
+            List<Object> transferOwnershipParams = new ArrayList<>();
+            transferOwnershipParams.add(goods.getGoodsId());
+            transferOwnershipParams.add(buyer.getWalletAddress());
+            
+            TransactionResponse ownershipResponse = bcosClientWrapper.getTransactionProcessor()
+                .sendTransactionAndGetResponseByContractLoader(
+                    "Goods",
+                    GOODS_ADDRESS,
+                    "transferOwnership",
+                    transferOwnershipParams
+                );
+            
+            if (!"Success".equals(ownershipResponse.getReceiptMessages())) {
+                throw new BusinessException("商品所有权转移失败: " + ownershipResponse.getReceiptMessages());
+            }
+            
+            // 3. 创建订单记录
+            Order order = new Order();
+            order.setOrderNo(generateOrderNo());
+            order.setGoodsId(goodsId);
+            order.setBuyerId(buyerId);
+            order.setSellerId(goods.getSellerId());
+            order.setAmount(goods.getPrice());
+            order.setStatus(1);  // 待发货状态
+            orderDao.insert(order);
+            
+            // 4. 更新商品状态
+            goods.setStatus(2);  // 已下架状态
+            goodsDao.updateById(goods);
+            
+            // 5. 记录交易存证
+            ChainEvidence evidence = new ChainEvidence();
+            evidence.setEvidenceType(1);  // 订单交易类型
+            evidence.setEvidenceContent(
+                String.format("买家(%s)购买了卖家(%s)的商品：(%s)--(%s)，交易金额：%s",
+                    buyer.getUsername(), seller.getUsername(), goods.getGoodsId(),
+                    goods.getGoodsName(), goods.getPrice())
+            );
+            evidence.setTxHash(transferResponse.getTransactionReceipt().getTransactionHash());
+            evidence.setBlockHeight(Long.parseLong(transferResponse.getTransactionReceipt().getBlockNumber().substring(2), 16));
+            evidence.setBlockTime(LocalDateTime.now());
+            chainEvidenceDao.insert(evidence);
+            
+            return order;
+            
+        } catch (Exception e) {
+            throw new BusinessException("创建订单失败: " + e.getMessage());
+        }
     }
     
     /**
@@ -257,15 +346,12 @@ public class OrderServiceImpl implements IOrderService {
         order.setReceiveTime(LocalDateTime.now());
         orderDao.updateById(order);
         
-        // 更新商品所有权 - 这部分将移至区块链
+        // 更新商品所有权
         Goods goods = goodsDao.selectById(order.getGoodsId());
         
         // 转移商品所有权 - 仅更新数据库记录，溯源信息将由区块链处理
         goods.setSellerId(order.getBuyerId());
         goods.setStatus(1);  // 设置为已上架状态，无需再审核
         goodsDao.updateById(goods);
-        
-        // 返回提示信息，提醒用户评价
-        throw new BusinessException(200, "收货成功，请对本次交易进行评价");
     }
 } 

@@ -1,5 +1,5 @@
 ---
-description: 标明此项目所采用的数据库数据及表结构
+description: 标明此项目所采用的数据库数
 globs: *.*
 ---
 ---
@@ -153,37 +153,15 @@ CREATE TABLE sys_param (
     INDEX idx_key(paramKey)
 ) COMMENT '系统参数表';
 
--- 10. 智能合约管理表
-CREATE TABLE chain_contract (
-    contractId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '合约ID',
-    contractName VARCHAR(100) NOT NULL COMMENT '合约名称',
-    contractAddress VARCHAR(42) NOT NULL UNIQUE COMMENT '合约地址',
-    contractAbi TEXT NOT NULL COMMENT '合约ABI',
-    contractBytecode TEXT NOT NULL COMMENT '合约字节码',
-    contractVersion VARCHAR(20) NOT NULL COMMENT '合约版本',
-    deployTxHash VARCHAR(66) NOT NULL COMMENT '部署交易哈希',
-    contractStatus TINYINT NOT NULL DEFAULT 1 COMMENT '合约状态(1-正常 2-已暂停 3-已废弃)',
-    deployTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '部署时间',
-    updateTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    INDEX idx_address(contractAddress),
-    INDEX idx_status(contractStatus)
-) COMMENT '智能合约管理表';
 
--- 11. 数据存证表
+-- 10. 数据存证表
 CREATE TABLE chain_evidence (
     evidenceId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '存证ID',
-    evidenceHash VARCHAR(64) NOT NULL UNIQUE COMMENT '存证哈希',
-    businessType TINYINT NOT NULL COMMENT '业务类型(1-订单 2-仲裁)',
-    businessId BIGINT NOT NULL COMMENT '业务ID',
     evidenceContent TEXT NOT NULL COMMENT '存证内容',
     txHash VARCHAR(66) NOT NULL COMMENT '上链交易哈希',
     blockHeight BIGINT COMMENT '区块高度',
     blockTime DATETIME COMMENT '区块时间',
-    status TINYINT NOT NULL DEFAULT 0 COMMENT '状态(0-处理中 1-已上链)',
     createTime DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    confirmTime DATETIME COMMENT '确认时间',
-    INDEX idx_evidence_hash(evidenceHash),
-    INDEX idx_business(businessType, businessId),
-    INDEX idx_tx_hash(txHash),
-    INDEX idx_block(blockHeight)
+    INDEX idx_block(blockHeight),
+    INDEX idx_tx_hash(txHash)
 ) COMMENT '数据存证表';
