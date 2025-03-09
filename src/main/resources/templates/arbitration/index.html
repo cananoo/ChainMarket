@@ -49,20 +49,24 @@
                         </div>
                         <div class="meta">
                             <span th:text="${#temporals.format(case.createTime, 'yyyy-MM-dd HH:mm:ss')}"></span>
-                            <span class="right floated">
-                                已有 <strong th:text="${case.arbitratorCount}">0</strong>/<strong th:text="${arbitratorCount}">3</strong> 名仲裁员参与
-                            </span>
                         </div>
                         <div class="description">
                             <p th:text="${case.disputeDesc}"></p>
                         </div>
+                        
+                        <!-- 保留投票进度条 -->
+                        <div class="extra content">
+                            <div class="ui tiny progress" th:data-percent="${case.votedCount * 100 / case.arbitratorCount}">
+                                <div class="bar"></div>
+                                <div class="label">投票进度: <span th:text="${case.votedCount}"></span>/<span th:text="${case.arbitratorCount}"></span></div>
+                            </div>
+                        </div>
                     </div>
                     <div class="extra content">
-                        <button class="ui primary button" th:onclick="'joinArbitration(' + ${case.caseId} + ')'"
-                                th:disabled="${case.arbitratorCount >= arbitratorCount}">
-                            <i class="handshake icon"></i>
-                            参与仲裁
-                        </button>
+                        <a th:href="@{/arbitration/detail/{id}(id=${case.caseId})}" class="ui button fluid primary">
+                            <i class="eye icon"></i>
+                            查看详情
+                        </a>
                     </div>
                 </div>
             </div>
@@ -80,7 +84,12 @@
         <div class="ui segment">
             <h3 class="ui dividing header">我的订单</h3>
             
-            <table class="ui celled table">
+            <div th:if="${myOrders == null || myOrders.isEmpty()}" class="ui info message">
+                <div class="header">暂无订单</div>
+                <p>您目前没有可申请仲裁的订单</p>
+            </div>
+            
+            <table th:if="${myOrders != null && !myOrders.isEmpty()}" class="ui celled table">
                 <thead>
                     <tr>
                         <th>订单号</th>

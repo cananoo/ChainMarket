@@ -19,6 +19,7 @@ import javax.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.PathVariable;
 import com.chainmarket.exception.BusinessException;
 import java.util.List;
+import com.chainmarket.entity.Order;
 
 @Controller
 @RequestMapping("/arbitration")
@@ -45,7 +46,10 @@ public class ArbitrationController {
         model.addAttribute("arbitratorCount", arbitratorCount);
         model.addAttribute("requiredVotes", requiredVotes);
         model.addAttribute("arbitrationCases", arbitrationService.getPendingArbitrations());
-        model.addAttribute("userOrders", arbitrationService.getUserOrders(user.getUserId()));
+        
+        // 获取用户订单并添加到模型中
+        List<Order> userOrders = arbitrationService.getUserOrders(user.getUserId());
+        model.addAttribute("myOrders", userOrders);
         
         return "arbitration/index";
     }
@@ -104,6 +108,28 @@ public class ArbitrationController {
         try {
             arbitrationService.joinArbitration(caseId, user.getUserId());
             return Result.success("加入成功");
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    /**
+     * 仲裁员投票
+     */
+    @PostMapping("/vote")
+    @ResponseBody
+    public Result<Void> vote(
+            @RequestParam Long caseId,
+            @RequestParam Boolean approve,
+            HttpSession session) {
+        User user = (User) session.getAttribute("user");
+        if (user == null) {
+            return Result.error("请先登录");
+        }
+        
+        try {
+            arbitrationService.vote(caseId, user.getUserId(), approve);
+            return Result.success("投票成功");
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

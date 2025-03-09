@@ -1,5 +1,5 @@
 ---
-description: 标明此项目所采用的数据库数
+description: 标明此项目所采用的数据库
 globs: *.*
 ---
 ---
@@ -157,6 +157,7 @@ CREATE TABLE sys_param (
 -- 10. 数据存证表
 CREATE TABLE chain_evidence (
     evidenceId BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '存证ID',
+    evidenceType tinyint NOT NULL COMMENT '存证类型(0-创建商品 1-订单交易 2-仲裁存证)',
     evidenceContent TEXT NOT NULL COMMENT '存证内容',
     txHash VARCHAR(66) NOT NULL COMMENT '上链交易哈希',
     blockHeight BIGINT COMMENT '区块高度',

@@ -36,4 +36,7 @@ public class Arbitration {
     
     @TableField(exist = false)
     private Integer arbitratorCount;
+    
+    @TableField(exist = false)
+    private Integer votedCount;
 } 

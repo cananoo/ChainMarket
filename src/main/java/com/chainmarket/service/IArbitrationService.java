@@ -39,4 +39,12 @@ public interface IArbitrationService {
      * 获取仲裁案件的证据列表
      */
     List<ArbitrationEvidence> getArbitrationEvidences(Long caseId);
+
+    /**
+     * 仲裁员投票
+     * @param caseId 案件ID
+     * @param userId 用户ID
+     * @param approve 是否同意
+     */
+    void vote(Long caseId, Long userId, boolean approve);
 } 

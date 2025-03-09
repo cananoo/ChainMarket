@@ -91,12 +91,12 @@
             <div class="ui center aligned container">
                 <p class="ui text">请根据以上信息，做出您的仲裁决定：</p>
                 <div class="ui two buttons" style="max-width: 400px; margin: 1em auto;">
-                    <button class="ui positive button">
+                    <button class="ui positive button" onclick="vote(true)">
                         <i class="thumbs up icon"></i>
                         赞成申请人诉求
                     </button>
                     <div class="or" data-text="或"></div>
-                    <button class="ui negative button">
+                    <button class="ui negative button" onclick="vote(false)">
                         <i class="thumbs down icon"></i>
                         否决申请人诉求
                     </button>
@@ -111,5 +111,44 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <script th:replace="fragments/navbar :: logout-script"></script>
+    <script th:inline="javascript">
+        // 获取案件ID
+        const caseId = /*[[${arbitration.caseId}]]*/ null;
+        
+        // 投票函数
+        function vote(approve) {
+            if(confirm('确定要' + (approve ? '赞成' : '否决') + '申请人诉求吗？此操作不可撤销。')) {
+                $.ajax({
+                    url: '/arbitration/vote',
+                    type: 'POST',
+                    data: {
+                        caseId: caseId,
+                        approve: approve
+                    },
+                    success: function(res) {
+                        if(res.code === 200) {
+                            alert('投票成功');
+                            // 禁用投票按钮
+                            $('.ui.positive.button, .ui.negative.button').addClass('disabled');
+                            // 显示投票结果
+                            const voteResult = approve ? '已赞成申请人诉求' : '已否决申请人诉求';
+                            $('.ui.center.aligned.container').append(
+                                '<div class="ui success message" style="margin-top: 1em;">' +
+                                '<i class="check circle icon"></i> ' +
+                                '您的投票: <strong>' + voteResult + '</strong>' +
+                                '</div>'
+                            );
+                        } else {
+                            alert(res.message);
+                        }
+                    },
+                    error: function() {
+                        alert('投票失败，请稍后重试');
+                    }
+                });
+            }
+        }
+    </script>
 </body>
 </html> 

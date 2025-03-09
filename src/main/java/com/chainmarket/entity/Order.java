@@ -84,10 +84,10 @@ public class Order {
         if (status == null) return "未知状态";
         switch (status) {
             case 0: return "待支付";
-            case 1: return "待确认";
-            case 2: return "已完成";
-            case 3: return "已取消";
-            case 4: return "退款中";
+            case 1: return "待发货";
+            case 2: return "待收货";
+            case 3: return "已完成";
+            case 4: return "仲裁中";
             case 5: return "已退款";
             default: return "未知状态";
         }
