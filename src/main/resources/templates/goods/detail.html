@@ -155,6 +155,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <script th:replace="fragments/navbar :: logout-script"></script>
     <script th:inline="javascript">
         function buyGoods() {
             const goodsId = /*[[${goods.goodsId}]]*/ null;
@@ -175,5 +176,4 @@
         }
     </script>
 </body>
-</html> 
 </html> 
