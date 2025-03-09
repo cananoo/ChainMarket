@@ -3,6 +3,7 @@ package com.chainmarket.service;
 import com.chainmarket.dto.GoodsUploadDTO;
 import com.chainmarket.entity.Goods;
 import com.chainmarket.entity.GoodsCategory;
+import com.chainmarket.entity.ChainEvidence;
 import java.util.List;
 
 public interface IGoodsService {
@@ -81,4 +82,25 @@ public interface IGoodsService {
      * @param userId 用户ID
      */
     void delistGoods(Long goodsId, Long userId);
+
+    /**
+     * 获取商品溯源信息
+     * @param goodsId 商品ID
+     * @return 溯源信息列表
+     */
+    List<ChainEvidence> getGoodsEvidence(Long goodsId);
+
+    /**
+     * 根据ID获取商品
+     * @param goodsId 商品ID
+     * @return 商品信息
+     */
+    Goods getGoodsById(Long goodsId);
+
+    /**
+     * 根据ID获取商品分类
+     * @param categoryId 分类ID
+     * @return 分类信息
+     */
+    GoodsCategory getCategoryById(Long categoryId);
 } 

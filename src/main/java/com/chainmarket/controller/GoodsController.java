@@ -15,6 +15,9 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.ui.Model;
 import java.util.List;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.chainmarket.exception.BusinessException;
+import com.chainmarket.entity.ChainEvidence;
+import com.chainmarket.entity.GoodsCategory;
 
 @Controller
 @RequestMapping("/goods")
@@ -98,14 +101,22 @@ public class GoodsController {
         }
     }
     
-    @GetMapping("/detail/{id}")
-    public String detail(@PathVariable Long id, Model model) {
+    @GetMapping("/detail/{goodsId}")
+    public String detail(@PathVariable Long goodsId, Model model, HttpSession session) {
         // 获取商品详情
-        Goods goods = goodsService.getGoodsDetail(id);
-        model.addAttribute("goods", goods);
+        Goods goods = goodsService.getGoodsDetail(goodsId);
+        if (goods == null) {
+            return "redirect:/market";
+        }
+        
+        // 获取商品分类信息
+        GoodsCategory category = goodsService.getCategoryById(goods.getCategoryId());
         
         // 获取卖家信息
         User seller = userService.getUserById(goods.getSellerId());
+        
+        model.addAttribute("goods", goods);
+        model.addAttribute("category", category);
         model.addAttribute("seller", seller);
         
         return "goods/detail";
@@ -175,5 +186,22 @@ public class GoodsController {
         
         model.addAttribute("goodsList", goodsList);
         return "user/test_goods";
+    }
+
+    @GetMapping("/trace/{goodsId}")
+    public String traceGoods(@PathVariable Long goodsId, Model model) {
+        // 获取商品信息
+        Goods goods = goodsService.getGoodsById(goodsId);
+        if (goods == null) {
+            throw new BusinessException("商品不存在");
+        }
+        
+        // 获取商品溯源信息
+        List<ChainEvidence> evidenceList = goodsService.getGoodsEvidence(goodsId);
+        
+        model.addAttribute("goods", goods);
+        model.addAttribute("evidenceList", evidenceList);
+        
+        return "goods/trace";
     }
 } 

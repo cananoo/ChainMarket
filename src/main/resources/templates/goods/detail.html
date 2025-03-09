@@ -14,151 +14,106 @@
             height: 400px;
             object-fit: cover;
             border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         .price {
             color: #db2828;
             font-size: 1.5em;
             font-weight: bold;
+            margin: 0.5em 0;
         }
-        .description {
-            margin: 2em 0;
-            white-space: pre-wrap;
+        .goods-info {
+            padding: 1em;
+            background: #f9f9f9;
+            border-radius: 4px;
+            margin-bottom: 1em;
         }
-        .status-label {
-            margin-left: 1em !important;
-        }
-        .credit-score {
-            display: inline-block;
-            padding: 1px 4px;
-            border-radius: 2px;
-            background-color: #21ba45;
-            color: white;
-            font-weight: bold;
-            font-size: 11px;
-            min-width: 28px;
-            text-align: center;
-            margin-left: 4px;
-            vertical-align: middle;
-            line-height: 1.2;
-        }
-        
-        .credit-score .star {
-            font-size: 9px;
-            margin-right: 1px;
-        }
-
         .seller-info {
-            margin-top: 0.25em;
+            padding: 1em;
+            background: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 1em;
         }
-        
-        .seller-info .ui.label {
-            padding: 5px 8px;
-            font-size: 13px;
-            margin: 0;
+        .goods-desc {
+            white-space: pre-line;
         }
-
-        .ui.list .item .content .description {
-            margin-top: 0.25em;
+        .ui.label {
+            margin-bottom: 0.5em;
         }
     </style>
 </head>
 <body>
-    <!-- 导航栏 -->
-    <div class="ui fixed inverted menu">
-        <div class="ui container">
-            <a href="/" class="header item">
-                <i class="chain icon"></i>
-                ChainMarket
-            </a>
-            <a href="/market" class="item">商品市场</a>
-            <a href="/about" class="item">关于我们</a>
-            <div class="right menu">
-                <th:block th:if="${session.user != null}">
-                    <div class="item">
-                        <i class="user icon"></i>
-                        <span th:text="${session.user.username}">用户名</span>
-                    </div>
-                    <a href="/user/center" class="item">个人中心</a>
-                    <a href="/user/logout" class="item">退出</a>
-                </th:block>
-                <th:block th:if="${session.user == null}">
-                    <a href="/user/register" class="item">注册</a>
-                    <a href="/user/login" class="item">登录</a>
-                </th:block>
-            </div>
-        </div>
-    </div>
+    <div th:replace="fragments/navbar :: navbar"></div>
 
     <div class="ui main container">
         <div class="ui grid">
-            <!-- 左侧商品图片 -->
-            <div class="eight wide column">
-                <img th:src="${goods.imageUrl != null ? goods.imageUrl : '/images/default.png'}" 
-                     alt="商品图片" class="goods-image">
+            <!-- 左侧图片区域 -->
+            <div class="six wide column">
+                <div class="ui segment">
+                    <img th:src="${goods.imageUrl}" alt="商品图片" class="goods-image">
+                    
+                    <!-- 添加区块链验证标志 -->
+                    <div class="ui teal ribbon label" style="margin-top: 1em;">
+                        <i class="shield alternate icon"></i> 区块链验证
+                    </div>
+                    <p style="font-size: 0.9em; color: #666; margin-top: 0.5em;">
+                        该商品信息已通过区块链技术验证，确保真实可靠
+                    </p>
+                </div>
             </div>
             
-            <!-- 右侧商品信息 -->
-            <div class="eight wide column">
-                <h1 class="ui header" th:text="${goods.goodsName}">商品名称</h1>
-                
-                <div class="ui divider"></div>
-                
-                <div class="price">
-                    ￥<span th:text="${goods.price}">价格</span>
-                    <div class="ui label status-label"
-                         th:classappend="${
-                            goods.status == 0 ? 'yellow' : 
-                            goods.status == 1 ? 'green' : 
-                            goods.status == 2 ? 'grey' :
-                            goods.status == 3 ? 'blue' : ''
-                         }"
-                         th:text="${
-                            goods.status == 0 ? '待审核' :
-                            goods.status == 1 ? '已上架' :
-                            goods.status == 2 ? '已下架' :
+            <!-- 右侧信息区域 -->
+            <div class="ten wide column">
+                <!-- 商品基本信息 -->
+                <div class="goods-info">
+                    <h2 class="ui header" th:text="${goods.goodsName}">商品名称</h2>
+                    <div class="price">¥ <span th:text="${goods.price}">价格</span></div>
+                    
+                    <div class="ui divider"></div>
+                    
+                    <div class="ui grid">
+                        <div class="eight wide column">
+                            <div class="ui label">
+                                <i class="tag icon"></i> 分类
+                                <div class="detail" th:text="${category != null ? category.categoryName : '未分类'}">分类名称</div>
+                            </div>
+                        </div>
+                        <div class="eight wide column">
+                            <div class="ui label">
+                                <i class="calendar alternate icon"></i> 发布时间
+                                <div class="detail" th:text="${#temporals.format(goods.createTime, 'yyyy-MM-dd')}">发布时间</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="ui label" th:if="${goods.status != null}">
+                        <i class="info circle icon"></i> 状态
+                        <div class="detail" th:text="${
+                            goods.status == 0 ? '待审核' : 
+                            goods.status == 1 ? '已上架' : 
+                            goods.status == 2 ? '已下架' : 
                             goods.status == 3 ? '已售出' : '未知'
-                         }">
-                        状态
+                        }">商品状态</div>
                     </div>
                 </div>
                 
-                <div class="description">
-                    <h4 class="ui header">商品描述</h4>
-                    <p th:text="${goods.goodsDesc}">商品描述内容</p>
+                <!-- 商品描述 -->
+                <div class="ui segment">
+                    <h4 class="ui dividing header">商品描述</h4>
+                    <p class="goods-desc" th:text="${goods.goodsDesc}">商品描述内容</p>
                 </div>
                 
-                <div class="ui segment">
-                    <h4 class="ui header">交易信息</h4>
-                    <div class="ui list">
+                <!-- 卖家信息 -->
+                <div class="seller-info">
+                    <h4 class="ui dividing header">卖家信息</h4>
+                    <div class="ui items">
                         <div class="item">
-                            <i class="calendar icon"></i>
                             <div class="content">
-                                <div class="header">发布时间</div>
-                                <div class="description" 
-                                     th:text="${#temporals.format(goods.createTime, 'yyyy-MM-dd HH:mm')}">
-                                    发布时间
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <i class="history icon"></i>
-                            <div class="content">
-                                <div class="header">更新时间</div>
-                                <div class="description" 
-                                     th:text="${#temporals.format(goods.updateTime, 'yyyy-MM-dd HH:mm')}">
-                                    更新时间
-                                </div>
-                            </div>
-                        </div>
-                        <div class="item">
-                            <i class="user icon"></i>
-                            <div class="content">
-                                <div class="header">卖家</div>
-                                <div class="description">
-                                    [[${seller.username}]]
-                                    <span class="credit-score">
-                                        <i class="star icon"></i>
-                                        [[${seller.creditScore}]]
+                                <div class="header" th:text="${seller.username}">卖家名称</div>
+                                <div class="meta">
+                                    <span>
+                                        <i class="star icon"></i> 信用评分: 
+                                        <span th:text="${seller.creditScore}">信用分</span>
                                     </span>
                                 </div>
                             </div>
@@ -166,18 +121,33 @@
                     </div>
                 </div>
                 
-                <!-- 购买按钮 -->
-                <div th:if="${goods.status == 1 && session.user != null && session.user.roleType == 1 && goods.sellerId != session.user.userId}">
-                    <button class="ui primary button fluid large" onclick="buyGoods()">
-                        <i class="shopping cart icon"></i>
-                        立即购买
-                    </button>
-                </div>
-                
-                <!-- 未登录提示 -->
-                <div th:if="${session.user == null}" class="ui warning message">
-                    <i class="info circle icon"></i>
-                    请先 <a href="/user/login">登录</a> 后购买商品
+                <!-- 购买按钮和溯源按钮区域 -->
+                <div class="ui segment">
+                    <div class="ui two buttons">
+                        <!-- 购买按钮 -->
+                        <button th:if="${goods.status == 1 && session.user != null && session.user.roleType == 1 && goods.sellerId != session.user.userId}" 
+                                class="ui primary button" onclick="buyGoods()">
+                            <i class="shopping cart icon"></i>
+                            立即购买
+                        </button>
+                        <button th:if="${!(goods.status == 1 && session.user != null && session.user.roleType == 1 && goods.sellerId != session.user.userId)}" 
+                                class="ui primary button disabled">
+                            <i class="shopping cart icon"></i>
+                            立即购买
+                        </button>
+                        
+                        <!-- 溯源按钮 -->
+                        <a th:href="@{/goods/trace/{id}(id=${goods.goodsId})}" class="ui teal button">
+                            <i class="history icon"></i>
+                            查看溯源信息
+                        </a>
+                    </div>
+                    
+                    <!-- 未登录提示 -->
+                    <div th:if="${session.user == null}" class="ui warning message" style="margin-top: 1em;">
+                        <i class="info circle icon"></i>
+                        请先 <a href="/user/login">登录</a> 后购买商品
+                    </div>
                 </div>
             </div>
         </div>
@@ -205,4 +175,5 @@
         }
     </script>
 </body>
+</html> 
 </html> 

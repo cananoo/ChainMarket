@@ -127,6 +127,7 @@ public class OrderServiceImpl implements IOrderService {
             order.setBuyerId(buyerId);
             order.setSellerId(goods.getSellerId());
             order.setAmount(goods.getPrice());
+            order.setTxHash(transferResponse.getTransactionReceipt().getTransactionHash());
             order.setStatus(1);  // 待发货状态
             orderDao.insert(order);
             
@@ -142,7 +143,7 @@ public class OrderServiceImpl implements IOrderService {
                     buyer.getUsername(), seller.getUsername(), goods.getGoodsId(),
                     goods.getGoodsName(), goods.getPrice())
             );
-            evidence.setTxHash(transferResponse.getTransactionReceipt().getTransactionHash());
+            evidence.setTxHash(ownershipResponse.getTransactionReceipt().getTransactionHash());
             evidence.setBlockHeight(Long.parseLong(transferResponse.getTransactionReceipt().getBlockNumber().substring(2), 16));
             evidence.setBlockTime(LocalDateTime.now());
             chainEvidenceDao.insert(evidence);

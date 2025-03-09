@@ -4,6 +4,7 @@ import com.chainmarket.dao.GoodsDao;
 import com.chainmarket.dao.GoodsCategoryDao;
 import com.chainmarket.dao.GoodsImageDao;
 import com.chainmarket.dao.AuditInfoDao;
+import com.chainmarket.dao.ChainEvidenceDao;
 import com.chainmarket.dto.GoodsUploadDTO;
 import com.chainmarket.entity.*;
 import com.chainmarket.service.IGoodsService;
@@ -25,12 +26,13 @@ public class GoodsServiceImpl implements IGoodsService {
     
     @Autowired
     private GoodsCategoryDao categoryDao;
-    
-    @Autowired
-    private GoodsImageDao imageDao;
+
     
     @Autowired
     private AuditInfoDao auditInfoDao;
+    
+    @Autowired
+    private ChainEvidenceDao chainEvidenceDao;
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -230,5 +232,39 @@ public class GoodsServiceImpl implements IGoodsService {
         // 更新状态为已下架
         goods.setStatus(2);
         goodsDao.updateById(goods);
+    }
+
+    @Override
+    public List<ChainEvidence> getGoodsEvidence(Long goodsId) {
+        // 查询与该商品相关的所有存证记录
+        // 使用SQL模糊查询，查找evidenceContent中包含商品ID的记录
+        String pattern = "%商品：(" + goodsId + ")%";
+        String pattern2 = "%商品：" + goodsId + "%";
+        
+        List<ChainEvidence> evidenceList = chainEvidenceDao.selectList(
+            new QueryWrapper<ChainEvidence>()
+                .and(wrapper -> wrapper
+                    .like("evidenceContent", pattern)
+                    .or()
+                    .like("evidenceContent", pattern2))
+                .in("evidenceType", 0, 1)  // 只查询创建商品和订单交易类型的存证
+                .orderByAsc("createTime")  // 按时间正序排列
+        );
+        
+        return evidenceList;
+    }
+
+    @Override
+    public Goods getGoodsById(Long goodsId) {
+        Goods goods = goodsDao.selectById(goodsId);
+        if (goods == null) {
+            throw new BusinessException("商品不存在");
+        }
+        return goods;
+    }
+
+    @Override
+    public GoodsCategory getCategoryById(Long categoryId) {
+        return categoryDao.selectById(categoryId);
     }
 } 

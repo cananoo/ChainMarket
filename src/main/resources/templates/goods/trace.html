@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${goods.goodsName + ' - 商品溯源 - ChainMarket'}">商品溯源</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    <style>
+        .main.container {
+            margin-top: 7em;
+            margin-bottom: 3em;
+        }
+        .trace-timeline {
+            position: relative;
+            margin: 2em 0;
+            padding-left: 2em;
+        }
+        .trace-timeline:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 4px;
+            background: #2185d0;
+            border-radius: 2px;
+        }
+        .trace-item {
+            position: relative;
+            margin-bottom: 2em;
+            padding: 1em;
+            background: #f8f8f8;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .trace-item:before {
+            content: '';
+            position: absolute;
+            top: 1.5em;
+            left: -2em;
+            width: 1em;
+            height: 1em;
+            background: #2185d0;
+            border-radius: 50%;
+            border: 2px solid #fff;
+        }
+        .trace-item:last-child {
+            margin-bottom: 0;
+        }
+        .trace-time {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 0.5em;
+        }
+        .trace-content {
+            margin-bottom: 0.5em;
+        }
+        .trace-hash {
+            font-family: monospace;
+            font-size: 0.85em;
+            word-break: break-all;
+            color: #888;
+            background: #f0f0f0;
+            padding: 0.5em;
+            border-radius: 3px;
+        }
+        .trace-type {
+            display: inline-block;
+            padding: 0.2em 0.6em;
+            border-radius: 3px;
+            color: white;
+            font-size: 0.8em;
+            margin-right: 0.5em;
+        }
+        .trace-type.create {
+            background-color: #21ba45;
+        }
+        .trace-type.trade {
+            background-color: #2185d0;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <div th:replace="~{common/header :: header}"></div>
+
+    <div class="ui main container">
+        <h2 class="ui header">
+            <i class="history icon"></i>
+            <div class="content">
+                商品溯源
+                <div class="sub header">
+                    <span th:text="${goods.goodsName}">商品名称</span> 的完整历史记录
+                </div>
+            </div>
+        </h2>
+        
+        <!-- 商品基本信息 -->
+        <div class="ui segment">
+            <div class="ui grid">
+                <div class="four wide column">
+                    <img th:src="${goods.imageUrl}" class="ui fluid image" alt="商品图片">
+                </div>
+                <div class="twelve wide column">
+                    <h3 th:text="${goods.goodsName}">商品名称</h3>
+                    <p><strong>商品ID：</strong><span th:text="${goods.goodsId}">ID</span></p>
+                    <p><strong>价格：</strong><span th:text="${goods.price}">价格</span> 元</p>
+                    <p><strong>状态：</strong>
+                        <span th:text="${
+                            goods.status == 0 ? '待审核' : 
+                            goods.status == 1 ? '已上架' : 
+                            goods.status == 2 ? '已下架' : 
+                            goods.status == 3 ? '已售出' : '未知'
+                        }">状态</span>
+                    </p>
+                    <p><strong>创建时间：</strong><span th:text="${#temporals.format(goods.createTime, 'yyyy-MM-dd HH:mm:ss')}">创建时间</span></p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 溯源时间线 -->
+        <div class="ui segment">
+            <h3 class="ui dividing header">溯源记录</h3>
+            
+            <div th:if="${evidenceList == null || evidenceList.isEmpty()}" class="ui message">
+                <div class="header">暂无溯源记录</div>
+                <p>该商品暂无区块链溯源记录</p>
+            </div>
+            
+            <div th:if="${evidenceList != null && !evidenceList.isEmpty()}" class="trace-timeline">
+                <div th:each="evidence : ${evidenceList}" class="trace-item">
+                    <div class="trace-time" th:text="${#temporals.format(evidence.blockTime != null ? evidence.blockTime : evidence.createTime, 'yyyy-MM-dd HH:mm:ss')}">时间</div>
+                    <div class="trace-content">
+                        <span th:class="${evidence.evidenceType == 0 ? 'trace-type create' : 'trace-type trade'}" 
+                              th:text="${evidence.evidenceType == 0 ? '创建' : '交易'}">类型</span>
+                        <span th:text="${evidence.evidenceContent}">存证内容</span>
+                    </div>
+                    <div class="trace-hash">
+                        <strong>交易哈希：</strong><span th:text="${evidence.txHash}">交易哈希</span>
+                    </div>
+                    <div th:if="${evidence.blockHeight != null}" class="trace-block">
+                        <strong>区块高度：</strong><span th:text="${evidence.blockHeight}">区块高度</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 区块链验证说明 -->
+        <div class="ui info message">
+            <div class="header">区块链验证</div>
+            <p>所有交易记录均已上链，可通过交易哈希在区块链浏览器中查询验证。</p>
+            <p>区块链技术确保了交易记录的不可篡改性，保障了商品溯源信息的真实可信。</p>
+        </div>
+        
+        <!-- 返回按钮 -->
+        <a th:href="@{/goods/detail/{id}(id=${goods.goodsId})}" class="ui button">
+            <i class="arrow left icon"></i>
+            返回商品详情
+        </a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+</body>
+</html> 
