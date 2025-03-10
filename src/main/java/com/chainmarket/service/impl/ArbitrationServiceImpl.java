@@ -1,32 +1,44 @@
 package com.chainmarket.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.chainmarket.dao.ArbitrationDao;
-import com.chainmarket.dao.ArbitrationEvidenceDao;
-import com.chainmarket.dao.OrderDao;
-import com.chainmarket.dao.UserDao;
-import com.chainmarket.dao.GoodsDao;
+import com.chainmarket.dao.*;
 import com.chainmarket.entity.*;
 import com.chainmarket.service.IArbitrationService;
 import com.chainmarket.service.IImageService;
 import com.chainmarket.service.ISystemParamService;
+import com.chainmarket.util.BcosClientWrapper;
 import com.chainmarket.util.SnowflakeIdGenerator;
 import com.chainmarket.exception.BusinessException;
+
+import org.fisco.bcos.sdk.abi.ABICodecException;
+import org.fisco.bcos.sdk.model.TransactionReceipt;
+import org.fisco.bcos.sdk.transaction.manager.AssembleTransactionProcessor;
+import org.fisco.bcos.sdk.transaction.model.dto.TransactionResponse;
+import org.fisco.bcos.sdk.transaction.model.exception.TransactionBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.data.redis.core.StringRedisTemplate;
+
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import java.util.List;
 import java.util.Iterator;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 @Service
 public class ArbitrationServiceImpl implements IArbitrationService {
     
     private static final String WALLET_ADDRESS = "0x3a20b086b5523c49ea04c2e16ba1dac63f8b51a1";
-    
+    private static final String ARBITRATION_CONTRACT_ADDRESS = "0x4a6f96c4f8100cce3253616f7722c0f7e7beb542";
+    private static final String GOODS_CONTRACT_ADDRESS = "0xf3de04e031091a612887caaf62928ce49cbb7ebf";
+
+    private static final String ARBITRATION_EXPIRE_DAYS_KEY = "arbitration_expire_days";
+
     @Autowired
     private ArbitrationDao arbitrationDao;
     
@@ -53,12 +65,68 @@ public class ArbitrationServiceImpl implements IArbitrationService {
     
     @Autowired
     private StringRedisTemplate redisTemplate;
+
+    @Autowired
+    private BcosClientWrapper bcosClientWrapper;
+
+    @Autowired
+    private ChainEvidenceDao chainEvidenceDao;
+
+
     
     @Override
     //获取所有待仲裁案件
-    public List<Arbitration> getPendingArbitrations() {
+    public List<Arbitration> getPendingArbitrations() throws ABICodecException, TransactionBaseException {
         // 获取待处理的仲裁案件
         List<Arbitration> arbitrations = arbitrationDao.selectPendingArbitrations();
+
+        // 检查案件是否过期并移除过期案件并存证案件
+        int size = arbitrations.size();
+        for (int i = 0;i < size;i++) {
+            Arbitration arbitration = arbitrations.get(0);
+            String caseId = arbitration.getCaseId().toString();
+            String caseNo = arbitration.getCaseNo();
+            String key = caseId + "total_votes";
+            String totalVotesStr = redisTemplate.opsForValue().get(key);
+            if (totalVotesStr == null) {
+
+                List<Object> params = new ArrayList<>();
+                params.add(caseId);
+                params.add(caseNo.toString());
+                params.add("无结果");
+                params.add(false);
+                params.add("案件过期自动失效");
+               
+                // 调用合约方法存证
+                AssembleTransactionProcessor processor = bcosClientWrapper.getTransactionProcessor();
+              TransactionReceipt transactionReceipt = processor.sendTransactionAndGetResponseByContractLoader(
+                                             "ArbitrationEvidence",
+                                              ARBITRATION_CONTRACT_ADDRESS,
+                                              "recordResult",
+                                              params
+                                            ).getTransactionReceipt();
+                String txHash = transactionReceipt.getTransactionHash();
+                String blockNumber = transactionReceipt.getBlockNumber();
+                // 将存证内容写入存证表
+                ChainEvidence evidence = new ChainEvidence();
+                evidence.setEvidenceType(2);  // 仲裁类型
+                evidence.setEvidenceContent(
+                "案件过期自动失效"
+                );
+                evidence.setTxHash(txHash);
+                evidence.setBlockHeight(Long.parseLong(blockNumber.substring(2), 16));
+                evidence.setBlockTime(LocalDateTime.now());
+                chainEvidenceDao.insert(evidence);
+           
+                        // 设置案件hash和完成时间
+                        arbitration.setTxHash(txHash);
+                        arbitration.setCompleteTime(LocalDateTime.now());
+                        arbitrationDao.updateById(arbitration);
+
+                arbitrations.remove(0);
+            }
+        }
+
         
         // 获取仲裁员数量
         Integer arbitratorCount = systemParamService.getArbitratorCount();
@@ -140,8 +208,11 @@ public class ArbitrationServiceImpl implements IArbitrationService {
         order.setStatus(4); // 状态4表示仲裁中
         orderDao.updateById(order);
         
-        // 9.redis设置案件时限为3天
-        redisTemplate.opsForValue().set(arbitration.getCaseId().toString(), arbitration.getCaseId().toString(), 3, TimeUnit.DAYS);
+        // 9.redis设置案件时限为arbitration_expire_days天数
+        String expireDaysStr = systemParamService.getParamValue(ARBITRATION_EXPIRE_DAYS_KEY);
+        int expireDays = (expireDaysStr != null) ? Integer.parseInt(expireDaysStr) : 3; // 默认3天
+
+        redisTemplate.opsForValue().set(arbitration.getCaseId().toString(), arbitration.getCaseId().toString(), expireDays, TimeUnit.DAYS);
         
         // 10.按信用分选取n位仲裁员，n为系统参数
         Integer n = systemParamService.getArbitratorCount();
@@ -168,14 +239,14 @@ public class ArbitrationServiceImpl implements IArbitrationService {
 
         // 11.将每一位仲裁员信息写入redis，key为案件号+仲裁员id，value为仲裁员仲裁选择（yes/no），初始为"null"
         for (User arbitrator : arbitrators) {
-            redisTemplate.opsForValue().set(arbitration.getCaseId().toString() + arbitrator.getUserId().toString(), "null", 3, TimeUnit.DAYS);
+            redisTemplate.opsForValue().set(arbitration.getCaseId().toString() + arbitrator.getUserId().toString(), "null", expireDays, TimeUnit.DAYS);
         }
       
         // 12.redis初始化投票 key为案件号+yes/no，value为投票人数，初始为0
-        redisTemplate.opsForValue().set(arbitration.getCaseId().toString() + "yes", "0", 3, TimeUnit.DAYS);
-        redisTemplate.opsForValue().set(arbitration.getCaseId().toString() + "no", "0", 3, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(arbitration.getCaseId().toString() + "yes", "0", expireDays, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(arbitration.getCaseId().toString() + "no", "0", expireDays, TimeUnit.DAYS);
         // 初始化总投票人数
-        redisTemplate.opsForValue().set(arbitration.getCaseId().toString() + "total_votes", "0", 3, TimeUnit.DAYS);
+        redisTemplate.opsForValue().set(arbitration.getCaseId().toString() + "total_votes", "0", expireDays, TimeUnit.DAYS);
       
     }
     
@@ -215,7 +286,7 @@ public class ArbitrationServiceImpl implements IArbitrationService {
      */
     @Override
     @Transactional
-    public void vote(Long caseId, Long userId, boolean approve) {
+    public void vote(Long caseId, Long userId, boolean approve) throws ABICodecException, TransactionBaseException {
         // 1. 验证仲裁案件是否存在
         Arbitration arbitration = arbitrationDao.selectById(caseId);
         if (arbitration == null) {
@@ -281,6 +352,90 @@ public class ArbitrationServiceImpl implements IArbitrationService {
             // 获取信用分前n位投票者，n为系统参数
             Integer n = systemParamService.getArbitratorCount();
 
+           // 11.案件存证
+              // 调用合约方法存证
+              List<Object> params = new ArrayList<>();
+              params.add(caseId);
+              params.add(arbitration.getCaseNo().toString());
+              params.add(yesCount+":"+ noCount);
+              params.add(true);
+              params.add("达成仲裁，买家胜诉");
+             
+
+              AssembleTransactionProcessor processor = bcosClientWrapper.getTransactionProcessor();
+              TransactionReceipt transactionReceipt = processor.sendTransactionAndGetResponseByContractLoader(
+                                             "ArbitrationEvidence",
+                                              ARBITRATION_CONTRACT_ADDRESS,
+                                              "recordResult",
+                                              params
+                                            ).getTransactionReceipt();
+                String txHash = transactionReceipt.getTransactionHash();
+                String blockNumber = transactionReceipt.getBlockNumber();
+                // 将存证内容写入存证表
+                ChainEvidence evidence = new ChainEvidence();
+                evidence.setEvidenceType(2);  // 仲裁类型
+                evidence.setEvidenceContent("达成仲裁，买家胜诉");
+                evidence.setTxHash(txHash);
+                evidence.setBlockHeight(Long.parseLong(blockNumber.substring(2), 16));
+                evidence.setBlockTime(LocalDateTime.now());
+                chainEvidenceDao.insert(evidence);
+
+                // 12. 交易回溯
+                 // 返还余额
+                 List<Object> walletParams = new ArrayList<>();
+                 walletParams.add(userDao.selectById(order.getSellerId()).getWalletAddress());//卖家钱包地址
+                 walletParams.add(userDao.selectById(order.getBuyerId()).getWalletAddress());//买家钱包地址
+                 walletParams.add(order.getAmount().intValue());//金额
+              
+                  String arbitrageTxHash = processor.sendTransactionAndGetResponseByContractLoader(
+                                      "Wallet",
+                                      WALLET_ADDRESS,
+                                      "transfer",
+                                      walletParams
+                                    ).getTransactionReceipt().getTransactionHash();;
+
+                  // 设置案件hash和完成时间
+                 arbitration.setTxHash(arbitrageTxHash);
+                 arbitration.setCompleteTime(LocalDateTime.now());
+                 arbitrationDao.updateById(arbitration);
+
+                  // 13.商品回溯
+                  List<Object> goodsParams = new ArrayList<>();
+                  goodsParams.add(order.getGoodsId());//商品id
+                  goodsParams.add(userDao.selectById(order.getSellerId()).getWalletAddress());//新物主钱包地址
+                  
+                  TransactionReceipt goodsReceipt = processor.sendTransactionAndGetResponseByContractLoader(
+                                      "Goods",
+                                      GOODS_CONTRACT_ADDRESS,
+                                      "transferOwnership",
+                                      goodsParams
+                                    ).getTransactionReceipt();
+
+                  String goodsTxHash = goodsReceipt.getTransactionHash();
+                  String goodsBlockNumber = goodsReceipt.getBlockNumber();
+                  // 将存证内容写入存证表
+                  ChainEvidence newOwnerEvidence = new ChainEvidence();
+                  newOwnerEvidence.setEvidenceType(1);  // 仲裁类型
+                  newOwnerEvidence.setEvidenceContent(
+                    String.format("买家(%s)转回了卖家(%s)的商品：(%s)--(%s)，收到退款：%s",
+                   userDao.selectById(order.getBuyerId()).getUsername(),
+                   userDao.selectById(order.getSellerId()).getUsername(),
+                   order.getGoodsId(),
+                   goodsDao.selectById(order.getGoodsId()).getGoodsName(),
+                   order.getAmount())
+                  );
+                  newOwnerEvidence.setTxHash(goodsTxHash);
+                  newOwnerEvidence.setBlockHeight(Long.parseLong(goodsBlockNumber.substring(2), 16));
+                  newOwnerEvidence.setBlockTime(LocalDateTime.now());
+                  chainEvidenceDao.insert(newOwnerEvidence);
+
+
+                  // 在数据库中更改商品卖家
+                  Goods goods = goodsDao.selectById(order.getGoodsId());
+                  goods.setSellerId(order.getSellerId());
+                  goodsDao.updateById(goods);
+
+
             // 获取订单买卖双方ID
             Long buyerId = order.getBuyerId();
             Long sellerId = order.getSellerId();
@@ -324,11 +479,46 @@ public class ArbitrationServiceImpl implements IArbitrationService {
              // 9. 处理订单状态
             Long orderId = arbitration.getOrderId();
             Order order = orderDao.selectById(orderId);
-            order.setStatus(4);//已取消
+            order.setStatus(3);//不取消
             
             // 10. 根据投票结果处理订单
             // 获取信用分前n位投票者，n为系统参数
             Integer n = systemParamService.getArbitratorCount();
+
+
+            // 11.案件存证
+              // 调用合约方法存证
+              List<Object> params = new ArrayList<>();
+              params.add(caseId);
+              params.add(arbitration.getCaseNo().toString());
+              params.add(yesCount+":"+ noCount);
+              params.add(false);
+              params.add("达成仲裁，卖家胜诉");
+
+              AssembleTransactionProcessor processor = bcosClientWrapper.getTransactionProcessor();
+              TransactionReceipt transactionReceipt = processor.sendTransactionAndGetResponseByContractLoader(
+                                             "ArbitrationEvidence",
+                                              ARBITRATION_CONTRACT_ADDRESS,
+                                              "recordResult",
+                                              params
+                                            ).getTransactionReceipt();
+                String txHash = transactionReceipt.getTransactionHash();
+                String blockNumber = transactionReceipt.getBlockNumber();
+                // 将存证内容写入存证表
+                ChainEvidence evidence = new ChainEvidence();
+                evidence.setEvidenceType(2);  // 仲裁类型
+                evidence.setEvidenceContent("达成仲裁，卖家胜诉");
+                evidence.setTxHash(txHash);
+                evidence.setBlockHeight(Long.parseLong(blockNumber.substring(2), 16));
+                evidence.setBlockTime(LocalDateTime.now());
+                chainEvidenceDao.insert(evidence);
+
+                        // 设置案件hash和完成时间
+                        arbitration.setTxHash(txHash);
+                        arbitration.setCompleteTime(LocalDateTime.now());
+                        arbitrationDao.updateById(arbitration);
+
+
 
             // 获取订单买卖双方ID
             Long buyerId = order.getBuyerId();
@@ -380,5 +570,58 @@ public class ArbitrationServiceImpl implements IArbitrationService {
         } else {
             throw new BusinessException("您不是该案件的仲裁员，无法加入");
         }
+    }
+
+    @Override
+    public List<Arbitration> getCompletedArbitrations() throws ABICodecException, TransactionBaseException {
+        List<Arbitration> completedCases = arbitrationDao.selectCompletedArbitrations();
+        
+        // 获取交易处理器
+        AssembleTransactionProcessor processor = bcosClientWrapper.getTransactionProcessor();
+        
+        // 设置每个案件的仲裁结果
+        for (Arbitration arbitration : completedCases) {
+            try {
+                // 调用合约获取仲裁结果
+                List<Object> params = new ArrayList<>();
+                params.add(arbitration.getCaseId());
+                
+                TransactionResponse response = processor.sendTransactionAndGetResponseByContractLoader(
+                    "ArbitrationEvidence",
+                    ARBITRATION_CONTRACT_ADDRESS,
+                    "getResult",
+                    params
+                );
+
+                String values = response.getValues();
+                // 移除开头的 [ 和结尾的 ]
+                values = values.substring(1, values.length() - 1);
+                // 按照逗号分割，但忽略引号内的逗号
+                String[] valuesArray = values.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+                
+                // 直接设置投票数
+                String voteRatio = valuesArray[1].replace("\"", ""); // 移除引号
+                arbitration.setVoteRatio(voteRatio); // 直接使用合约返回的投票数，格式如 "2:1"
+                
+                // 设置结果
+                arbitration.setResult(Boolean.parseBoolean(valuesArray[2]));
+                
+                // 设置结果描述
+                String desc = valuesArray[3].replace("\"", ""); // 移除引号
+                arbitration.setResultDesc(desc);
+                
+                arbitrationDao.updateById(arbitration);
+                
+            } catch (Exception e) {
+                // 记录错误但继续处理其他案件
+                System.err.println("处理案件 " + arbitration.getCaseId() + " 时出错: " + e.getMessage());
+                // 设置默认值
+                arbitration.setVoteRatio("0:0");
+                arbitration.setResult(false);
+                arbitration.setResultDesc("获取结果失败");
+            }
+        }
+        
+        return completedCases;
     }
 } 

@@ -39,4 +39,25 @@ public class Arbitration {
     
     @TableField(exist = false)
     private Integer votedCount;
+    
+    @TableField(exist = false)
+    private String voteRatio; // 投票比例
+    
+    @TableField(exist = false)
+    private Boolean result; // true表示支持申请人，false表示驳回申请
+    
+    @TableField(exist = false)
+    private String resultDesc; // 仲裁结果描述
+    
+    public String getResultDesc() {
+        if (status != 2) { // 未完成
+            return "仲裁进行中";
+        }
+        // 如果有自定义描述，使用自定义描述
+        if (resultDesc != null && !resultDesc.isEmpty()) {
+            return resultDesc;
+        }
+        // 否则使用默认描述
+        return result ? "仲裁成功" : "驳回申请";
+    }
 } 

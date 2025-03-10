@@ -18,4 +18,9 @@ public interface ISystemParamService {
      * 获取仲裁员数量
      */
     int getArbitratorCount();
+    
+    /**
+     * 根据参数键获取参数值
+     */
+    String getParamValue(String key);
 } 

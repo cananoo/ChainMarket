@@ -21,4 +21,15 @@ public interface ArbitrationDao extends BaseMapper<Arbitration> {
             "WHERE a.status = 1 " +  // 状态1表示处理中
             "ORDER BY a.createTime DESC")
     List<Arbitration> selectPendingArbitrations();
+
+    /**
+     * 获取已完成的仲裁案件
+     */
+    @Select("SELECT a.*, o.orderNo, u.username as initiatorName " +
+            "FROM arbitration_case a " +
+            "LEFT JOIN order_info o ON a.orderId = o.orderId " +
+            "LEFT JOIN user_info u ON a.initiatorId = u.userId " +
+            "WHERE a.status = 2 " +  // 状态2表示已完成
+            "ORDER BY a.completeTime DESC")
+    List<Arbitration> selectCompletedArbitrations();
 } 

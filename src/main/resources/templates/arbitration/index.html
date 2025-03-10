@@ -36,54 +36,117 @@
             </ul>
         </div>
         
-        <!-- 仲裁案件列表 -->
-        <div class="ui segment">
-            <h3 class="ui dividing header">待处理的仲裁案件</h3>
-            
-            <div class="ui cards">
-                <div class="ui fluid card arbitration-card" th:each="case : ${arbitrationCases}">
-                    <div class="content">
-                        <div class="header">
-                            <i class="gavel icon"></i>
-                            仲裁案件 #<span th:text="${case.caseNo}"></span>
-                        </div>
-                        <div class="meta">
-                            <span th:text="${#temporals.format(case.createTime, 'yyyy-MM-dd HH:mm:ss')}"></span>
-                        </div>
-                        <div class="description">
-                            <p th:text="${case.disputeDesc}"></p>
-                        </div>
-                        
-                        <!-- 保留投票进度条 -->
-                        <div class="extra content">
-                            <div class="ui tiny progress" th:data-percent="${case.votedCount * 100 / case.arbitratorCount}">
-                                <div class="bar"></div>
-                                <div class="label">投票进度: <span th:text="${case.votedCount}"></span>/<span th:text="${case.arbitratorCount}"></span></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="extra content">
-                        <a th:href="@{/arbitration/detail/{id}(id=${case.caseId})}" class="ui button fluid primary">
-                            <i class="eye icon"></i>
-                            查看详情
-                        </a>
-                    </div>
-                </div>
+        <!-- 在现有内容下方添加 -->
+        <div class="ui top attached tabular menu">
+            <a class="active item" data-tab="pending">进行中的仲裁</a>
+            <a class="item" data-tab="completed">已完成的仲裁</a>
+            <a class="item" data-tab="apply">申请仲裁</a>
+        </div>
+
+        <!-- 进行中的仲裁 -->
+        <div class="ui bottom attached active tab segment" data-tab="pending">
+            <div th:if="${arbitrationCases.isEmpty()}" class="ui message">
+                <div class="header">暂无进行中的仲裁案件</div>
+                <p>当前没有需要处理的仲裁案件。</p>
             </div>
             
-            <!-- 无数据提示 -->
-            <div class="ui placeholder segment" th:if="${#lists.isEmpty(arbitrationCases)}">
-                <div class="ui icon header">
-                    <i class="check circle icon"></i>
-                    暂无待处理的仲裁案件
+            <!-- 现有的仲裁案件卡片 -->
+            <div class="ui segment">
+                <h3 class="ui dividing header">待处理的仲裁案件</h3>
+                
+                <div class="ui cards">
+                    <div class="ui fluid card arbitration-card" th:each="case : ${arbitrationCases}">
+                        <div class="content">
+                            <div class="header">
+                                <i class="gavel icon"></i>
+                                仲裁案件 #<span th:text="${case.caseNo}"></span>
+                            </div>
+                            <div class="meta">
+                                <span th:text="${#temporals.format(case.createTime, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                            </div>
+                            <div class="description">
+                                <p th:text="${case.disputeDesc}"></p>
+                            </div>
+                            
+                            <!-- 保留投票进度条 -->
+                            <div class="extra content">
+                                <div class="ui tiny progress" th:data-percent="${case.votedCount * 100 / case.arbitratorCount}">
+                                    <div class="bar"></div>
+                                    <div class="label">投票进度: <span th:text="${case.votedCount}"></span>/<span th:text="${case.arbitratorCount}"></span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="extra content">
+                            <a th:href="@{/arbitration/detail/{id}(id=${case.caseId})}" class="ui button fluid primary">
+                                <i class="eye icon"></i>
+                                查看详情
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 无数据提示 -->
+                <div class="ui placeholder segment" th:if="${#lists.isEmpty(arbitrationCases)}">
+                    <div class="ui icon header">
+                        <i class="check circle icon"></i>
+                        暂无待处理的仲裁案件
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- 在仲裁案件列表后添加我的订单部分 -->
-        <div class="ui segment">
-            <h3 class="ui dividing header">我的订单</h3>
+        <!-- 已完成的仲裁 -->
+        <div class="ui bottom attached tab segment" data-tab="completed">
+            <div th:if="${completedCases.isEmpty()}" class="ui message">
+                <div class="header">暂无已完成的仲裁案件</div>
+                <p>当前没有已完成的仲裁案件记录。</p>
+            </div>
             
+            <div class="ui segment">
+                <h3 class="ui dividing header">已完成的仲裁案件</h3>
+                
+                <div class="ui cards">
+                    <div class="ui fluid card arbitration-card" th:each="case : ${completedCases}">
+                        <div class="content">
+                            <div class="header">
+                                <i class="gavel icon"></i>
+                                仲裁案件 #<span th:text="${case.caseNo}"></span>
+                                <div class="ui label right floated" 
+                                     th:class="${case.result ? 'ui green label' : 'ui red label'}"
+                                     th:text="${case.resultDesc}">
+                                </div>
+                            </div>
+                            <div class="meta">
+                                <span>完成时间: </span>
+                                <span th:text="${#temporals.format(case.completeTime, 'yyyy-MM-dd HH:mm:ss')}"></span>
+                            </div>
+                            <div class="description">
+                                <p th:text="${case.disputeDesc}"></p>
+                                <div class="ui small statistics">
+                                    <div class="statistic">
+                                        <div class="value" th:text="${case.voteRatio}">3:2</div>
+                                        <div class="label">投票比例</div>
+                                    </div>
+                                </div>
+                                <div class="ui message">
+                                    <i class="info circle icon"></i>
+                                    <span th:text="${case.resultDesc}">仲裁结果</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="extra content">
+                            <a th:href="@{/arbitration/detail/{id}(id=${case.caseId})}" class="ui button fluid primary">
+                                <i class="eye icon"></i>
+                                查看详情
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 申请仲裁 -->
+        <div class="ui bottom attached tab segment" data-tab="apply">
             <div th:if="${myOrders == null || myOrders.isEmpty()}" class="ui info message">
                 <div class="header">暂无订单</div>
                 <p>您目前没有可申请仲裁的订单</p>
@@ -191,6 +254,11 @@
                 }
             });
         }
+
+        $(document).ready(function() {
+            $('.menu .item').tab();
+            $('.ui.progress').progress();
+        });
     </script>
 </body>
 </html>

@@ -36,3 +36,9 @@ mybatis-plus:
     map-underscore-to-camel-case: false
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
+file:
+  upload:
+    path: src/main/resources/static/uploads
+  access:
+    path: /uploads
+

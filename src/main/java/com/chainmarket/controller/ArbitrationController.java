@@ -6,6 +6,8 @@ import com.chainmarket.entity.User;
 import com.chainmarket.service.IArbitrationService;
 import com.chainmarket.service.ISystemParamService;
 import com.chainmarket.common.Result;
+import org.fisco.bcos.sdk.abi.ABICodecException;
+import org.fisco.bcos.sdk.transaction.model.exception.TransactionBaseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -32,7 +34,7 @@ public class ArbitrationController {
     private ISystemParamService systemParamService;
     
     @GetMapping
-    public String index(Model model, HttpSession session) {
+    public String index(Model model, HttpSession session) throws ABICodecException, TransactionBaseException {
         User user = (User) session.getAttribute("user");
         if (user == null) {
             return "redirect:/user/login";
@@ -46,6 +48,9 @@ public class ArbitrationController {
         model.addAttribute("arbitratorCount", arbitratorCount);
         model.addAttribute("requiredVotes", requiredVotes);
         model.addAttribute("arbitrationCases", arbitrationService.getPendingArbitrations());
+        
+        // 添加已完成的仲裁案件
+        model.addAttribute("completedCases", arbitrationService.getCompletedArbitrations());
         
         // 获取用户订单并添加到模型中
         List<Order> userOrders = arbitrationService.getUserOrders(user.getUserId());

@@ -87,8 +87,7 @@ public class Order {
             case 1: return "待发货";
             case 2: return "待收货";
             case 3: return "已完成";
-            case 4: return "仲裁中";
-            case 5: return "已退款";
+            case 4: return "仲裁完成";
             default: return "未知状态";
         }
     }

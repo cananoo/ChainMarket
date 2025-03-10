@@ -46,9 +46,18 @@ public class SystemParamServiceImpl implements ISystemParamService {
                     new QueryWrapper<SystemParam>().eq("paramKey", key)
                 );
                 
+                // 获取参数描述
+                String paramDesc = switch (key) {
+                    case "arbitrator_count" -> "仲裁员数量配置";
+                    case "group_id" -> "联盟链组ID";
+                    case "arbitration_expire_days" -> "仲裁案件有效天数";
+                    default -> "系统参数";
+                };
+                
                 if (existingParam != null) {
                     // 更新参数
                     existingParam.setParamValue(value);
+                    existingParam.setParamDesc(paramDesc);
                     int rows = systemParamDao.updateById(existingParam);
                     if (rows != 1) {
                         throw new BusinessException("更新参数失败");
@@ -58,7 +67,7 @@ public class SystemParamServiceImpl implements ISystemParamService {
                     SystemParam newParam = new SystemParam();
                     newParam.setParamKey(key);
                     newParam.setParamValue(value);
-                    newParam.setParamDesc("仲裁员数量配置");
+                    newParam.setParamDesc(paramDesc);
                     int rows = systemParamDao.insert(newParam);
                     if (rows != 1) {
                         throw new BusinessException("新增参数失败");
@@ -74,5 +83,10 @@ public class SystemParamServiceImpl implements ISystemParamService {
     public int getArbitratorCount() {
         String value = systemParamDao.getParamValue(ARBITRATOR_COUNT_KEY);
         return value != null ? Integer.parseInt(value) : 3; // 默认3人
+    }
+
+    @Override
+    public String getParamValue(String key) {
+        return systemParamDao.getParamValue(key);
     }
 } 
