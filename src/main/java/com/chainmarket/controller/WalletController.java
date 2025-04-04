@@ -22,6 +22,7 @@ public class WalletController {
         if (user == null) {
             return Result.error("请先登录");
         }
+        if (user.getRoleType() == 9) return Result.success(new BigDecimal(0));
         try {
             BigDecimal balance = walletService.getBalance(user.getWalletAddress());
             return Result.success(balance);

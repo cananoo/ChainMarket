@@ -24,11 +24,7 @@ public interface IOrderService {
      * 取消订单
      */
     void cancelOrder(Long orderId, Long userId);
-    
-    /**
-     * 申请仲裁
-     */
-    void applyArbitration(Long orderId, Long userId, String reason);
+
     
     /**
      * 获取买家订单列表

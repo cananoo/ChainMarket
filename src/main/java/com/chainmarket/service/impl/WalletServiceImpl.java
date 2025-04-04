@@ -22,7 +22,7 @@ public class WalletServiceImpl implements IWalletService {
 
     private static final String WALLET_ADDRESS = "0x3a20b086b5523c49ea04c2e16ba1dac63f8b51a1";
 
-    private Map<String, BigDecimal> balanceMap = new ConcurrentHashMap<>();
+
 
     @Override
     public String generateWalletAddress() {

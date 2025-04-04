@@ -2,16 +2,13 @@ package com.chainmarket.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 
 import com.chainmarket.service.IUserManageService;
 import com.chainmarket.service.ISystemParamService;
+import com.chainmarket.service.IGoodsService;
 import com.chainmarket.common.Result;
+import com.chainmarket.entity.GoodsCategory;
 
 import java.util.Map;
 
@@ -24,6 +21,9 @@ public class AdminController {
     
     @Autowired
     private ISystemParamService systemParamService;
+    
+    @Autowired
+    private IGoodsService goodsService;
     
     @GetMapping
     public String index() {
@@ -59,5 +59,44 @@ public class AdminController {
     public Result<Void> updateParams(@RequestBody Map<String, String> params) {
         systemParamService.updateParams(params);
         return Result.success("保存成功");
+    }
+    
+    /**
+     * 获取所有商品类别
+     */
+    @GetMapping("/categories")
+    @ResponseBody
+    public Result<?> getAllCategories() {
+        return Result.success(goodsService.getCategories());
+    }
+    
+    /**
+     * 添加商品类别
+     */
+    @PostMapping("/category")
+    @ResponseBody
+    public Result<Void> addCategory(@RequestBody GoodsCategory category) {
+        goodsService.addCategory(category);
+        return Result.success("添加成功");
+    }
+    
+    /**
+     * 更新商品类别
+     */
+    @PutMapping("/category")
+    @ResponseBody
+    public Result<Void> updateCategory(@RequestBody GoodsCategory category) {
+        goodsService.updateCategory(category);
+        return Result.success("更新成功");
+    }
+    
+    /**
+     * 删除商品类别
+     */
+    @DeleteMapping("/category/{categoryId}")
+    @ResponseBody
+    public Result<Void> deleteCategory(@PathVariable Long categoryId) {
+        goodsService.deleteCategory(categoryId);
+        return Result.success("删除成功");
     }
 } 

@@ -122,35 +122,9 @@ public class GoodsController {
         return "goods/detail";
     }
 
-    @GetMapping("/my/page")
-    public String myGoodsPage(Model model, HttpSession session) {
-        System.out.println("===== 访问我的商品页面 =====");
-        
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            System.out.println("用户未登录");
-            return "redirect:/user/login";
-        }
-        
-        System.out.println("当前用户ID: " + user.getUserId());
-        
-        List<Goods> goodsList = goodsService.getUserGoods(user.getUserId());
-        System.out.println("查询到商品数量: " + (goodsList != null ? goodsList.size() : "null"));
-        
-        model.addAttribute("goodsList", goodsList);
-        return "user/goods";
-    }
 
-    @GetMapping("/my")
-    @ResponseBody
-    public Result getMyGoods(HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return Result.error("请先登录");
-        }
-        List<Goods> goodsList = goodsService.getUserGoods(user.getUserId());
-        return Result.success(goodsList);
-    }
+
+
 
     @PostMapping("/list/{goodsId}")
     @ResponseBody
@@ -174,19 +148,7 @@ public class GoodsController {
         return Result.success("下架成功");
     }
 
-    @GetMapping("/test/my")
-    public String testMyGoods(Model model, HttpSession session) {
-        User user = (User) session.getAttribute("user");
-        if (user == null) {
-            return "redirect:/user/login";
-        }
-        
-        // 直接查询数据库
-        List<Goods> goodsList = goodsService.getUserGoods(user.getUserId());
-        
-        model.addAttribute("goodsList", goodsList);
-        return "user/test_goods";
-    }
+
 
     @GetMapping("/trace/{goodsId}")
     public String traceGoods(@PathVariable Long goodsId, Model model) {

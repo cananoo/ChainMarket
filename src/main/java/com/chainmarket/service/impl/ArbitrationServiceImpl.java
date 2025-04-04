@@ -122,9 +122,8 @@ public class ArbitrationServiceImpl implements IArbitrationService {
                         arbitration.setTxHash(txHash);
                         arbitration.setCompleteTime(LocalDateTime.now());
                         arbitrationDao.updateById(arbitration);
-
-                arbitrations.remove(0);
             }
+            arbitrations.remove(0);
         }
 
         

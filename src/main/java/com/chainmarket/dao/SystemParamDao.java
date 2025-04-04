@@ -15,13 +15,7 @@ public interface SystemParamDao extends BaseMapper<SystemParam> {
      */
     @Select("SELECT * FROM sys_param")
     List<SystemParam> selectAllParams();
-    
-    /**
-     * 根据参数键获取参数值
-     * 使用MyBatis注解方式实现
-     */
-    @Select("SELECT paramValue FROM sys_param WHERE paramKey = #{key}")
-    String getParamValueByKey(String key);
+
     
     /**
      * 根据参数键获取参数值

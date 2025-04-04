@@ -12,15 +12,7 @@ public interface IGoodsService {
      */
     void uploadGoods(GoodsUploadDTO goodsDTO, Long sellerId);
     
-    /**
-     * 获取待审核商品列表
-     */
-    List<Goods> getPendingGoods();
-    
-    /**
-     * 审核商品
-     */
-    void auditGoods(Long goodsId, Integer status, String comment);
+
     
     /**
      * 获取商品分类列表
@@ -37,11 +29,7 @@ public interface IGoodsService {
      */
     List<Goods> getOnSaleGoodsByCategory(Long categoryId);
     
-    /**
-     * 获取卖家的商品列表
-     */
-    List<Goods> getSellerGoods(Long sellerId);
-    
+
     /**
      * 获取商品详情
      */
@@ -103,4 +91,22 @@ public interface IGoodsService {
      * @return 分类信息
      */
     GoodsCategory getCategoryById(Long categoryId);
+
+    /**
+     * 添加商品类别
+     * @param category 商品类别
+     */
+    void addCategory(GoodsCategory category);
+    
+    /**
+     * 更新商品类别
+     * @param category 商品类别
+     */
+    void updateCategory(GoodsCategory category);
+    
+    /**
+     * 删除商品类别
+     * @param categoryId 类别ID
+     */
+    void deleteCategory(Long categoryId);
 } 

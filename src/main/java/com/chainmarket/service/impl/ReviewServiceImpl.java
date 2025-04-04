@@ -3,9 +3,11 @@ package com.chainmarket.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.chainmarket.dao.OrderDao;
 import com.chainmarket.dao.OrderReviewDao;
+import com.chainmarket.dao.UserDao;
 import com.chainmarket.dto.OrderReviewDTO;
 import com.chainmarket.entity.Order;
 import com.chainmarket.entity.OrderReview;
+import com.chainmarket.entity.User;
 import com.chainmarket.exception.BusinessException;
 import com.chainmarket.service.IReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +24,9 @@ public class ReviewServiceImpl implements IReviewService {
     
     @Autowired
     private OrderDao orderDao;
+    
+    @Autowired
+    private UserDao userDao;
 
     @Override
     public boolean existsOrderReview(Long orderId) {
@@ -66,6 +71,35 @@ public class ReviewServiceImpl implements IReviewService {
         
         // 保存评价
         orderReviewDao.insert(review);
+        
+        // 根据评分调整卖家信用分
+        User seller = userDao.selectById(order.getSellerId());
+        if (seller != null) {
+            int creditDelta = 0;
+            
+            // 根据评分调整信用分
+            switch (reviewDTO.getScore()) {
+                case 1: creditDelta = -2; break; // 1分减2分
+                case 2: creditDelta = -1; break; // 2分减1分
+                case 3: creditDelta = 0; break;  // 3分不变
+                case 4: creditDelta = 1; break;  // 4分加1分
+                case 5: creditDelta = 2; break;  // 5分加2分
+                default: creditDelta = 0;
+            }
+            
+            // 更新卖家信用分
+            if (creditDelta != 0) {
+                Integer currentCredit = seller.getCreditScore();
+                if (currentCredit == null) {
+                    currentCredit = 80; // 默认信用分
+                }
+                
+                // 直接更新信用分，不限制范围
+                int newCredit = currentCredit + creditDelta;
+                seller.setCreditScore(newCredit);
+                userDao.updateById(seller);
+            }
+        }
     }
     
     @Override

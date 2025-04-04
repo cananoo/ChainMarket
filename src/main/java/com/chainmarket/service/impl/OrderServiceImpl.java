@@ -255,29 +255,7 @@ public class OrderServiceImpl implements IOrderService {
         goodsDao.updateById(goods);
     }
     
-    @Override
-    public void applyArbitration(Long orderId, Long userId, String reason) {
-        Order order = orderDao.selectById(orderId);
-        if (order == null) {
-            throw new BusinessException("订单不存在");
-        }
-        
-        // 验证订单所属人(买家或卖家都可以申请仲裁)
-        if (!order.getBuyerId().equals(userId) && !order.getSellerId().equals(userId)) {
-            throw new BusinessException("无权操作此订单");
-        }
-        
-        // 验证订单状态
-        if (order.getStatus() != 1) {  // 只有已支付待确认状态可以申请仲裁
-            throw new BusinessException("当前订单状态不可申请仲裁");
-        }
-        
-        // 更新订单状态
-        order.setStatus(4);  // 申请仲裁状态
-        orderDao.updateById(order);
-        
-        // TODO: 创建仲裁记录
-    }
+
     
     @Override
     public List<Order> getBuyerOrders(Long buyerId) {

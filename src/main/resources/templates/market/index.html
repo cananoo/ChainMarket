@@ -132,6 +132,55 @@
             </a>
         </div>
 
+        <!-- 在商品列表上方添加类别管理区域，仅管理员可见 -->
+        <div class="ui segment" th:if="${session.user != null && session.user.roleType == 9}">
+            <h3 class="ui header">
+                <i class="tags icon"></i>
+                <div class="content">
+                    商品类别管理
+                    <div class="sub header">管理员专用功能</div>
+                </div>
+            </h3>
+            
+            <!-- 添加类别按钮 -->
+            <button class="ui primary button" onclick="showAddCategoryModal()">
+                <i class="plus icon"></i> 添加类别
+            </button>
+            
+            <!-- 类别列表 -->
+            <table class="ui compact celled table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>类别名称</th>
+                        <th>创建时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="categoryList">
+                    <!-- 类别数据将通过JavaScript动态加载 -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 添加/编辑类别的模态框 -->
+        <div class="ui small modal" id="categoryModal" th:if="${session.user != null && session.user.roleType == 9}">
+            <div class="header" id="categoryModalTitle">添加类别</div>
+            <div class="content">
+                <form class="ui form" id="categoryForm">
+                    <input type="hidden" id="categoryId">
+                    <div class="field">
+                        <label>类别名称</label>
+                        <input type="text" id="categoryName" placeholder="请输入类别名称">
+                    </div>
+                </form>
+            </div>
+            <div class="actions">
+                <div class="ui cancel button">取消</div>
+                <div class="ui positive button" onclick="saveCategory()">保存</div>
+            </div>
+        </div>
+
         <!-- 商品列表 -->
         <div class="ui four cards">
             <div th:each="goods : ${goodsList}" class="card goods-card">
@@ -195,6 +244,122 @@
                 });
             }
         }
+
+        // 加载类别列表
+        function loadCategories() {
+            $.ajax({
+                url: '/admin/categories',
+                type: 'GET',
+                success: function(res) {
+                    if (res.code === 200) {
+                        let html = '';
+                        res.data.forEach(function(category) {
+                            html += `
+                                <tr>
+                                    <td>${category.categoryId}</td>
+                                    <td>${category.categoryName}</td>
+                                    <td>${formatDateTime(category.createTime)}</td>
+                                    <td>
+                                        <button class="ui mini primary button" onclick="showEditCategoryModal(${category.categoryId}, '${category.categoryName}')">编辑</button>
+                                        <button class="ui mini negative button" onclick="deleteCategory(${category.categoryId})">删除</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                        $('#categoryList').html(html);
+                    }
+                }
+            });
+        }
+        
+        // 显示添加类别模态框
+        function showAddCategoryModal() {
+            $('#categoryModalTitle').text('添加类别');
+            $('#categoryId').val('');
+            $('#categoryName').val('');
+            $('#categoryModal').modal('show');
+        }
+        
+        // 显示编辑类别模态框
+        function showEditCategoryModal(id, name) {
+            $('#categoryModalTitle').text('编辑类别');
+            $('#categoryId').val(id);
+            $('#categoryName').val(name);
+            $('#categoryModal').modal('show');
+        }
+        
+        // 保存类别（添加或更新）
+        function saveCategory() {
+            const id = $('#categoryId').val();
+            const name = $('#categoryName').val();
+            
+            if (!name) {
+                alert('请输入类别名称');
+                return;
+            }
+            
+            const data = {
+                categoryName: name
+            };
+            
+            if (id) {
+                data.categoryId = id;
+            }
+            
+            $.ajax({
+                url: '/admin/category',
+                type: id ? 'PUT' : 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(res) {
+                    if (res.code === 200) {
+                        alert(res.message);
+                        $('#categoryModal').modal('hide');
+                        loadCategories();
+                        // 刷新页面以更新类别过滤器
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        alert(res.message);
+                    }
+                }
+            });
+        }
+        
+        // 删除类别
+        function deleteCategory(id) {
+            if (confirm('确定要删除该类别吗？')) {
+                $.ajax({
+                    url: '/admin/category/' + id,
+                    type: 'DELETE',
+                    success: function(res) {
+                        if (res.code === 200) {
+                            alert(res.message);
+                            loadCategories();
+                            // 刷新页面以更新类别过滤器
+                            setTimeout(function() {
+                                location.reload();
+                            }, 1000);
+                        } else {
+                            alert(res.message);
+                        }
+                    }
+                });
+            }
+        }
+        
+        // 格式化日期时间
+        function formatDateTime(dateTime) {
+            if (!dateTime) return '';
+            const date = new Date(dateTime);
+            return date.toLocaleString();
+        }
+        
+        // 页面加载时初始化
+        $(document).ready(function() {
+            loadCategories();
+        });
     </script>
 </body>
 </html> 

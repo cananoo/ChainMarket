@@ -29,9 +29,6 @@ public class GoodsServiceImpl implements IGoodsService {
 
     
     @Autowired
-    private AuditInfoDao auditInfoDao;
-    
-    @Autowired
     private ChainEvidenceDao chainEvidenceDao;
     
     @Override
@@ -59,32 +56,7 @@ public class GoodsServiceImpl implements IGoodsService {
         // 保存商品信息
         goodsDao.insert(goods);
     }
-    
-    @Override
-    public List<Goods> getPendingGoods() {
-        return goodsDao.selectPendingGoods();
-    }
-    
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void auditGoods(Long goodsId, Integer status, String comment) {
-        Goods goods = goodsDao.selectById(goodsId);
-        if (goods == null) {
-            throw new BusinessException("商品不存在");
-        }
-        
-        // 更新商品状态
-        goods.setStatus(status);
-        goodsDao.updateById(goods);
-        
-        // 记录审核信息
-        AuditInfo auditInfo = new AuditInfo();
-        auditInfo.setObjectId(goodsId);
-        auditInfo.setAuditType(2);  // 商品审核
-        auditInfo.setAuditStatus(status);
-        auditInfo.setAuditOpinion(comment);
-        auditInfoDao.insert(auditInfo);
-    }
+
     
     @Override
     public List<GoodsCategory> getCategories() {
@@ -106,12 +78,7 @@ public class GoodsServiceImpl implements IGoodsService {
                 .orderByDesc("createTime"));
     }
     
-    @Override
-    public List<Goods> getSellerGoods(Long sellerId) {
-        return goodsDao.selectList(new QueryWrapper<Goods>()
-                .eq("sellerId", sellerId)
-                .orderByDesc("createTime"));
-    }
+
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -163,12 +130,6 @@ public class GoodsServiceImpl implements IGoodsService {
         System.out.println("用户ID: " + userId);
         
         try {
-            // 使用原生SQL查询测试
-            List<Goods> rawResult = goodsDao.selectByMap(Collections.singletonMap("sellerId", userId));
-            System.out.println("原生查询结果数量: " + (rawResult != null ? rawResult.size() : "null"));
-            if (rawResult != null && !rawResult.isEmpty()) {
-                System.out.println("第一条商品ID: " + rawResult.get(0).getGoodsId());
-            }
             
             // 使用Lambda查询
             LambdaQueryWrapper<Goods> wrapper = new LambdaQueryWrapper<>();
@@ -266,5 +227,57 @@ public class GoodsServiceImpl implements IGoodsService {
     @Override
     public GoodsCategory getCategoryById(Long categoryId) {
         return categoryDao.selectById(categoryId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void addCategory(GoodsCategory category) {
+        // 验证类别名称是否已存在
+        if (categoryDao.exists(new QueryWrapper<GoodsCategory>()
+                .eq("categoryName", category.getCategoryName()))) {
+            throw new BusinessException("类别名称已存在");
+        }
+        
+        // 保存类别
+        categoryDao.insert(category);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateCategory(GoodsCategory category) {
+        // 验证类别是否存在
+        if (!categoryDao.exists(new QueryWrapper<GoodsCategory>()
+                .eq("categoryId", category.getCategoryId()))) {
+            throw new BusinessException("类别不存在");
+        }
+        
+        // 验证类别名称是否已被其他类别使用
+        if (categoryDao.exists(new QueryWrapper<GoodsCategory>()
+                .eq("categoryName", category.getCategoryName())
+                .ne("categoryId", category.getCategoryId()))) {
+            throw new BusinessException("类别名称已被使用");
+        }
+        
+        // 更新类别
+        categoryDao.updateById(category);
+    }
+    
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteCategory(Long categoryId) {
+        // 验证类别是否存在
+        if (!categoryDao.exists(new QueryWrapper<GoodsCategory>()
+                .eq("categoryId", categoryId))) {
+            throw new BusinessException("类别不存在");
+        }
+        
+        // 检查是否有商品使用该类别
+        if (goodsDao.exists(new QueryWrapper<Goods>()
+                .eq("categoryId", categoryId))) {
+            throw new BusinessException("该类别下有商品，无法删除");
+        }
+        
+        // 删除类别
+        categoryDao.deleteById(categoryId);
     }
 } 
