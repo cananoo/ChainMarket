@@ -81,15 +81,18 @@ public class ArbitrationServiceImpl implements IArbitrationService {
         List<Arbitration> arbitrations = arbitrationDao.selectPendingArbitrations();
 
         // 检查案件是否过期并移除过期案件并存证案件
-        int size = arbitrations.size();
-        for (int i = 0;i < size;i++) {
-            Arbitration arbitration = arbitrations.get(0);
+        // 修复bug：不应该删除列表中的第一个元素，而应该删除过期的元素
+        List<Arbitration> expiredArbitrations = new ArrayList<>();
+        for (Arbitration arbitration : arbitrations) {
             String caseId = arbitration.getCaseId().toString();
-            String caseNo = arbitration.getCaseNo();
             String key = caseId + "total_votes";
             String totalVotesStr = redisTemplate.opsForValue().get(key);
-            if (totalVotesStr == null) {
-
+            // 只有当在Redis中找不到案件相关的信息时，才认为案件过期
+            if (totalVotesStr == null && !redisTemplate.hasKey(caseId)) {
+                expiredArbitrations.add(arbitration);
+                
+                // 处理过期案件
+                String caseNo = arbitration.getCaseNo();
                 List<Object> params = new ArrayList<>();
                 params.add(caseId);
                 params.add(caseNo.toString());
@@ -99,7 +102,7 @@ public class ArbitrationServiceImpl implements IArbitrationService {
                
                 // 调用合约方法存证
                 AssembleTransactionProcessor processor = bcosClientWrapper.getTransactionProcessor();
-              TransactionReceipt transactionReceipt = processor.sendTransactionAndGetResponseByContractLoader(
+                TransactionReceipt transactionReceipt = processor.sendTransactionAndGetResponseByContractLoader(
                                              "ArbitrationEvidence",
                                               ARBITRATION_CONTRACT_ADDRESS,
                                               "recordResult",
@@ -118,15 +121,17 @@ public class ArbitrationServiceImpl implements IArbitrationService {
                 evidence.setBlockTime(LocalDateTime.now());
                 chainEvidenceDao.insert(evidence);
            
-                        // 设置案件hash和完成时间
-                        arbitration.setTxHash(txHash);
-                        arbitration.setCompleteTime(LocalDateTime.now());
-                        arbitrationDao.updateById(arbitration);
+                // 设置案件hash和完成时间
+                arbitration.setTxHash(txHash);
+                arbitration.setCompleteTime(LocalDateTime.now());
+                arbitration.setStatus(2); // 将状态更新为已完成
+                arbitrationDao.updateById(arbitration);
             }
-            arbitrations.remove(0);
         }
-
         
+        // 从原列表中移除过期案件
+        arbitrations.removeAll(expiredArbitrations);
+
         // 获取仲裁员数量
         Integer arbitratorCount = systemParamService.getArbitratorCount();
         
