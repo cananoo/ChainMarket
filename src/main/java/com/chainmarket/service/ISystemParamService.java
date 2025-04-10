@@ -23,4 +23,9 @@ public interface ISystemParamService {
      * 根据参数键获取参数值
      */
     String getParamValue(String key);
+    
+    /**
+     * 获取仲裁参与时间间隔(天)
+     */
+    int getArbitrationIntervalDays();
 } 

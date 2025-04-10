@@ -18,6 +18,7 @@ public class SystemParamServiceImpl implements ISystemParamService {
     private SystemParamDao systemParamDao;
     
     private static final String ARBITRATOR_COUNT_KEY = "arbitrator_count";
+    private static final String ARBITRATION_INTERVAL_DAYS_KEY = "arbitration_interval_days";
     
     @Override
     public Map<String, String> getAllParams() {
@@ -51,6 +52,7 @@ public class SystemParamServiceImpl implements ISystemParamService {
                     case "arbitrator_count" -> "仲裁员数量配置";
                     case "group_id" -> "联盟链组ID";
                     case "arbitration_expire_days" -> "仲裁案件有效天数";
+                    case "arbitration_interval_days" -> "仲裁参与时间间隔(天)";
                     default -> "系统参数";
                 };
                 
@@ -88,5 +90,11 @@ public class SystemParamServiceImpl implements ISystemParamService {
     @Override
     public String getParamValue(String key) {
         return systemParamDao.getParamValue(key);
+    }
+    
+    @Override
+    public int getArbitrationIntervalDays() {
+        String value = systemParamDao.getParamValue(ARBITRATION_INTERVAL_DAYS_KEY);
+        return value != null ? Integer.parseInt(value) : 7; // 默认7天
     }
 } 

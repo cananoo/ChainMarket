@@ -160,6 +160,15 @@
                             </div>
                         </div>
                         
+                        <!-- 添加仲裁参与频率设置 -->
+                        <div class="field">
+                            <label>仲裁参与时间间隔(天)</label>
+                            <input type="number" id="arbitrationIntervalDays" min="1" max="30" placeholder="仲裁参与间隔时间">
+                            <div class="ui pointing label">
+                                设置用户参与仲裁的间隔时间，在此期间内用户不会被选为仲裁员
+                            </div>
+                        </div>
+                        
                         <div class="ui divider"></div>
                         <button type="button" class="ui primary button" onclick="saveParams()">保存设置</button>
                     </form>
@@ -384,6 +393,7 @@
             const arbitratorCount = $('#arbitratorCount').val();
             const groupId = $('#groupId').val();
             const arbitrationExpireDays = $('#arbitrationExpireDays').val();
+            const arbitrationIntervalDays = $('#arbitrationIntervalDays').val();
             
             // 参数验证
             if (!arbitratorCount || arbitratorCount < 1 || arbitratorCount > 10) {
@@ -401,10 +411,16 @@
                 return;
             }
             
+            if (!arbitrationIntervalDays || arbitrationIntervalDays < 1 || arbitrationIntervalDays > 30) {
+                alert('请输入1-30之间的仲裁参与间隔天数');
+                return;
+            }
+            
             const data = {
                 arbitrator_count: arbitratorCount,
                 group_id: groupId,
-                arbitration_expire_days: arbitrationExpireDays
+                arbitration_expire_days: arbitrationExpireDays,
+                arbitration_interval_days: arbitrationIntervalDays
             };
             
             $.ajax({
@@ -442,6 +458,7 @@
                         $('#arbitratorCount').val(params.arbitrator_count || 3);
                         $('#groupId').val(params.group_id || 1);
                         $('#arbitrationExpireDays').val(params.arbitration_expire_days || 7);
+                        $('#arbitrationIntervalDays').val(params.arbitration_interval_days || 7);
                         
                         // 记录原始组ID值
                         originalGroupId = params.group_id || 1;

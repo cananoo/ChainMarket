@@ -226,24 +226,53 @@ public class ArbitrationServiceImpl implements IArbitrationService {
         Long buyerId = order.getBuyerId();
         Long sellerId = order.getSellerId();
 
-        // 排除买卖双方的仲裁员选择
-        List<User> arbitrators = userDao.selectList(
+        // 获取仲裁参与间隔时间(天)
+        int intervalDays = systemParamService.getArbitrationIntervalDays();
+
+        // 排除买卖双方的仲裁员选择，并排除最近参与过仲裁的用户
+        List<User> potentialArbitrators = userDao.selectList(
             new QueryWrapper<User>()
                 .ne("userId", buyerId)  // 排除买家
                 .ne("userId", sellerId) // 排除卖家
                 .ne("userId", userId)   // 排除申请人（可能是买家或卖家）
+                .eq("status", 1)        // 只选择状态正常的用户
                 .orderByDesc("creditScore")
-                .last("limit " + n)
         );
+        
+        // 过滤掉最近参与过仲裁的用户
+        List<User> filteredArbitrators = new ArrayList<>();
+        for (User arbitrator : potentialArbitrators) {
+            // 检查用户是否最近参与过仲裁
+            String nextArbitrationTimeKey = "user:" + arbitrator.getUserId() + ":next_arbitration_time";
+            String nextTimeStr = redisTemplate.opsForValue().get(nextArbitrationTimeKey);
+            
+            if (nextTimeStr == null) {
+                // 用户没有参与过仲裁或参与时间已过期
+                filteredArbitrators.add(arbitrator);
+            }
+            
+            // 如果已经选择了足够的仲裁员，就停止
+            if (filteredArbitrators.size() >= n) {
+                break;
+            }
+        }
+        
+        // 最终选择的仲裁员
+        List<User> arbitrators = filteredArbitrators.subList(0, Math.min(n, filteredArbitrators.size()));
 
         // 如果没有足够的仲裁员
         if (arbitrators.size() < n) {
-            throw new BusinessException("系统中没有足够的仲裁员，请联系管理员");
+            throw new BusinessException("系统中没有足够的可用仲裁员，请联系管理员");
         }
 
         // 11.将每一位仲裁员信息写入redis，key为案件号+仲裁员id，value为仲裁员仲裁选择（yes/no），初始为"null"
         for (User arbitrator : arbitrators) {
+            // 设置仲裁员案件参与记录
             redisTemplate.opsForValue().set(arbitration.getCaseId().toString() + arbitrator.getUserId().toString(), "null", expireDays, TimeUnit.DAYS);
+            
+            // 设置用户下次可参与仲裁的时间
+            String nextArbitrationTimeKey = "user:" + arbitrator.getUserId() + ":next_arbitration_time";
+            redisTemplate.opsForValue().set(nextArbitrationTimeKey, "1", intervalDays, TimeUnit.DAYS);
         }
       
         // 12.redis初始化投票 key为案件号+yes/no，value为投票人数，初始为0
